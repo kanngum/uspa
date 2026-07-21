@@ -1,0 +1,47 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/app/lib/api";
+
+interface SearchParams {
+  query?: string;
+  facultyId?: string;
+  departmentId?: string;
+  degreeType?: string;
+  level?: string;
+  page?: number;
+  limit?: number;
+}
+
+export function useSearchProgrammes(params: SearchParams) {
+  return useQuery({
+    queryKey: ["programmes", "search", params],
+    queryFn: () => api.searchProgrammes(params),
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useProgramme(id: string) {
+  return useQuery({
+    queryKey: ["programme", id],
+    queryFn: () => api.getProgramme(id),
+    enabled: !!id,
+  });
+}
+
+export function useAutoComplete(query: string) {
+  return useQuery({
+    queryKey: ["programmes", "autocomplete", query],
+    queryFn: () => api.getAutoComplete(query),
+    enabled: query.length >= 2,
+  });
+}
+
+export function useFeaturedProgrammes() {
+  return useQuery({
+    queryKey: ["programmes", "featured"],
+    queryFn: () =>
+      api.searchProgrammes({ page: 1, limit: 8 }),
+  });
+}
+

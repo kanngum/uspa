@@ -9,3 +9,9 @@ build/
 *.log
 .DS_Store
 Thumbs.db
+
+# AI/IDE tool config directories
+.agents/
+.claude/
+.windsurf/
+skills-lock.json
