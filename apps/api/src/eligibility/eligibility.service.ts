@@ -32,8 +32,21 @@ export class EligibilityService {
   ) {}
 
   private readonly gradeValue: Record<string, number> = {
-    A1: 1, B2: 2, B3: 3, C4: 4, C5: 5, C6: 6, D7: 7, E8: 8, F9: 9,
-    A: 1, B: 2, C: 3, D: 4, E: 5, F: 6,
+    A1: 1,
+    B2: 2,
+    B3: 3,
+    C4: 4,
+    C5: 5,
+    C6: 6,
+    D7: 7,
+    E8: 8,
+    F9: 9,
+    A: 1,
+    B: 2,
+    C: 3,
+    D: 4,
+    E: 5,
+    F: 6,
   };
 
   private gradeMeetsMinimum(grade: string, minimum: string): boolean {
@@ -42,7 +55,9 @@ export class EligibilityService {
     return gVal <= mVal;
   }
 
-  async checkEligibility(input: EligibilityCheckInput): Promise<EligibilityResult[]> {
+  async checkEligibility(
+    input: EligibilityCheckInput,
+  ): Promise<EligibilityResult[]> {
     const results: EligibilityResult[] = [];
 
     // Determine which programme(s) to check
@@ -107,7 +122,10 @@ export class EligibilityService {
       };
     }
 
-    const reasons: { type: 'success' | 'warning' | 'error'; message: string }[] = [];
+    const reasons: {
+      type: 'success' | 'warning' | 'error';
+      message: string;
+    }[] = [];
     const missingRequirements: string[] = [];
     const satisfiedRequirements: string[] = [];
 
@@ -152,12 +170,17 @@ export class EligibilityService {
           message: `Missing ${levelLabel} requirement: ${req.subject.name}`,
         });
         missingRequirements.push(req.subject.name);
-      } else if (req.minimumGrade && !this.gradeMeetsMinimum(subjectGrade, req.minimumGrade)) {
+      } else if (
+        req.minimumGrade &&
+        !this.gradeMeetsMinimum(subjectGrade, req.minimumGrade)
+      ) {
         reasons.push({
           type: 'error',
           message: `${req.subject.name}: grade ${subjectGrade} does not meet minimum ${req.minimumGrade}`,
         });
-        missingRequirements.push(`${req.subject.name} (need ${req.minimumGrade})`);
+        missingRequirements.push(
+          `${req.subject.name} (need ${req.minimumGrade})`,
+        );
       } else {
         satisfiedRequirements.push(
           `${req.subject.name}: ${subjectGrade}${req.minimumGrade ? ` (min ${req.minimumGrade})` : ''}`,
@@ -200,4 +223,3 @@ export class EligibilityService {
     };
   }
 }
-

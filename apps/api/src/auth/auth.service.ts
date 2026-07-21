@@ -1,12 +1,14 @@
 import {
   Injectable,
-  ConflictException,
   UnauthorizedException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
+
+const ADMIN_ROLES = ['ADMIN', 'SUPER_ADMIN'];
 
 @Injectable()
 export class AuthService {
@@ -17,46 +19,10 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(input: {
-    email: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-  }) {
-    const existing = await this.prisma.user.findUnique({
-      where: { email: input.email.toLowerCase() },
-    });
-
-    if (existing) {
-      throw new ConflictException('Email is already registered');
-    }
-
-    const passwordHash = await bcrypt.hash(input.password, 12);
-
-    const user = await this.prisma.user.create({
-      data: {
-        email: input.email.toLowerCase(),
-        passwordHash,
-        firstName: input.firstName,
-        lastName: input.lastName,
-        role: 'STUDENT',
-      },
-    });
-
-    const token = this.generateToken(user.id, user.email, user.role);
-
-    return {
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role,
-      },
-    };
-  }
-
+  /**
+   * Login is restricted to admin users only.
+   * Only users with ADMIN or SUPER_ADMIN role can log in.
+   */
   async login(input: { email: string; password: string }) {
     const user = await this.prisma.user.findUnique({
       where: { email: input.email.toLowerCase() },
@@ -68,6 +34,13 @@ export class AuthService {
 
     if (!user.isActive) {
       throw new UnauthorizedException('Account is deactivated');
+    }
+
+    // Restrict login to admin roles only
+    if (!ADMIN_ROLES.includes(user.role)) {
+      throw new ForbiddenException(
+        'Access denied. Only administrators can access this system.',
+      );
     }
 
     const isValid = await bcrypt.compare(input.password, user.passwordHash);
@@ -110,13 +83,8 @@ export class AuthService {
     return user;
   }
 
-  private generateToken(
-    userId: string,
-    email: string,
-    role: string,
-  ): string {
+  private generateToken(userId: string, email: string, role: string): string {
     const payload = { sub: userId, email, role };
     return this.jwtService.sign(payload);
   }
 }
-

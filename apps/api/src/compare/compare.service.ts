@@ -7,7 +7,9 @@ export class CompareService {
 
   async compare(programmeIds: string[]) {
     if (!programmeIds || programmeIds.length < 2) {
-      throw new NotFoundException('At least 2 programme IDs are required for comparison');
+      throw new NotFoundException(
+        'At least 2 programme IDs are required for comparison',
+      );
     }
 
     const programmes = await this.prisma.programme.findMany({
@@ -37,7 +39,9 @@ export class CompareService {
     if (programmes.length !== programmeIds.length) {
       const foundIds = programmes.map((p) => p.id);
       const missing = programmeIds.filter((id) => !foundIds.includes(id));
-      throw new NotFoundException(`Programmes not found: ${missing.join(', ')}`);
+      throw new NotFoundException(
+        `Programmes not found: ${missing.join(', ')}`,
+      );
     }
 
     return programmes;
@@ -67,7 +71,9 @@ export class CompareService {
       },
       {
         attribute: 'Faculty',
-        values: programmes.map((p) => p.department?.academicUnit?.name ?? 'N/A'),
+        values: programmes.map(
+          (p) => p.department?.academicUnit?.name ?? 'N/A',
+        ),
       },
       {
         attribute: 'Department',
@@ -75,11 +81,10 @@ export class CompareService {
       },
       {
         attribute: 'Tuition (per year)',
-        values: programmes.map(
-          (p) =>
-            p.tuition[0]
-              ? `${Number(p.tuition[0].amount).toLocaleString()} ${p.tuition[0].currency}`
-              : 'N/A',
+        values: programmes.map((p) =>
+          p.tuition[0]
+            ? `${Number(p.tuition[0].amount).toLocaleString()} ${p.tuition[0].currency}`
+            : 'N/A',
         ),
       },
       {
@@ -95,8 +100,7 @@ export class CompareService {
       {
         attribute: 'Careers',
         values: programmes.map(
-          (p) =>
-            p.careers.map((c) => c.career.name).join(', ') || 'None',
+          (p) => p.careers.map((c) => c.career.name).join(', ') || 'None',
         ),
       },
     ];
@@ -104,4 +108,3 @@ export class CompareService {
     return { headers, rows };
   }
 }
-

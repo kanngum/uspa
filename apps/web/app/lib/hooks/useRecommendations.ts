@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/app/lib/api";
 
 export function useSimilarProgrammes(programmeId: string) {
@@ -11,10 +11,11 @@ export function useSimilarProgrammes(programmeId: string) {
   });
 }
 
-export function useAlternatives() {
-  return useMutation({
-    mutationFn: (input: { subjects: string[]; programmeId?: string }) =>
-      api.getAlternatives(input),
+export function useAlternatives(missingSubjectIds: string[], limit?: number) {
+  return useQuery({
+    queryKey: ["recommendations", "alternatives", missingSubjectIds, limit],
+    queryFn: () => api.getAlternatives(missingSubjectIds, limit),
+    enabled: missingSubjectIds.length > 0,
   });
 }
 

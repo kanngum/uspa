@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../../generated/prisma/client.js';
 
 @Injectable()
 export class ProgrammesService {
@@ -16,7 +16,8 @@ export class ProgrammesService {
     page?: number;
     limit?: number;
   }) {
-    const { query, facultyId, departmentId, degreeType, level, career } = params;
+    const { query, facultyId, departmentId, degreeType, level, career } =
+      params;
     const page = Math.max(1, params.page || 1);
     const limit = Math.min(100, Math.max(1, params.limit || 20));
 
@@ -213,6 +214,127 @@ export class ProgrammesService {
     });
   }
 
+  async create(input: {
+    departmentId: string;
+    code: string;
+    name: string;
+    degree: string;
+    level: string;
+    duration: number;
+    description?: string;
+  }) {
+    // Check programme code uniqueness
+    const existingCode = await this.prisma.programme.findUnique({
+      where: { code: input.code },
+    });
+    if (existingCode) {
+      throw new NotFoundException(
+        `A programme with code "${input.code}" already exists`,
+      );
+    }
+
+    // Verify department exists
+    const department = await this.prisma.department.findUnique({
+      where: { id: input.departmentId },
+    });
+    if (!department) {
+      throw new NotFoundException(
+        `Department with ID ${input.departmentId} not found`,
+      );
+    }
+
+    return this.prisma.programme.create({
+      data: {
+        departmentId: input.departmentId,
+        code: input.code,
+        name: input.name,
+        degree: input.degree as any,
+        level: input.level as any,
+        duration: input.duration,
+        description: input.description,
+      },
+      include: {
+        department: {
+          include: {
+            academicUnit: {
+              select: { id: true, name: true, abbreviation: true },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async update(
+    id: string,
+    input: {
+      departmentId?: string;
+      code?: string;
+      name?: string;
+      degree?: string;
+      level?: string;
+      duration?: number;
+      description?: string;
+    },
+  ) {
+    const programme = await this.prisma.programme.findUnique({
+      where: { id },
+    });
+    if (!programme) {
+      throw new NotFoundException(`Programme with ID ${id} not found`);
+    }
+
+    // Check code uniqueness if changing
+    if (input.code && input.code !== programme.code) {
+      const existingCode = await this.prisma.programme.findUnique({
+        where: { code: input.code },
+      });
+      if (existingCode) {
+        throw new NotFoundException(
+          `A programme with code "${input.code}" already exists`,
+        );
+      }
+    }
+
+    return this.prisma.programme.update({
+      where: { id },
+      data: {
+        ...(input.departmentId !== undefined && {
+          departmentId: input.departmentId,
+        }),
+        ...(input.code !== undefined && { code: input.code }),
+        ...(input.name !== undefined && { name: input.name }),
+        ...(input.degree !== undefined && { degree: input.degree as any }),
+        ...(input.level !== undefined && { level: input.level as any }),
+        ...(input.duration !== undefined && { duration: input.duration }),
+        ...(input.description !== undefined && {
+          description: input.description,
+        }),
+      },
+      include: {
+        department: {
+          include: {
+            academicUnit: {
+              select: { id: true, name: true, abbreviation: true },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async remove(id: string) {
+    const programme = await this.prisma.programme.findUnique({
+      where: { id },
+    });
+    if (!programme) {
+      throw new NotFoundException(`Programme with ID ${id} not found`);
+    }
+
+    await this.prisma.programme.delete({ where: { id } });
+    return { message: 'Programme deleted successfully' };
+  }
+
   async getAutoComplete(query: string) {
     if (!query || query.trim().length < 2) {
       return [];
@@ -254,4 +376,3 @@ export class ProgrammesService {
     }));
   }
 }
-

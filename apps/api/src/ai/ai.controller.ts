@@ -12,4 +12,3 @@ export class AiController {
     return { success: true, data: response };
   }
 }
-

@@ -58,4 +58,3 @@ export class FavouritesController {
     return { success: true, data: { isFavourite } };
   }
 }
-

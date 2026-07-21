@@ -137,7 +137,10 @@ export class RecommendationsService {
     });
   }
 
-  async getAlternativeProgrammes(missingSubjectIds: string[], limit: number = 5) {
+  async getAlternativeProgrammes(
+    missingSubjectIds: string[],
+    limit: number = 5,
+  ) {
     // Find programmes that DON'T require the missing subjects
     return this.prisma.programme.findMany({
       where: {
@@ -169,4 +172,3 @@ export class RecommendationsService {
     });
   }
 }
-

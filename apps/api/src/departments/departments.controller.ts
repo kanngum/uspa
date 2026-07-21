@@ -11,4 +11,3 @@ export class DepartmentsController {
     return { success: true, data: department };
   }
 }
-

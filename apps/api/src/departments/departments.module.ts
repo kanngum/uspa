@@ -7,4 +7,3 @@ import { FacultiesModule } from '../faculties/faculties.module';
   controllers: [DepartmentsController],
 })
 export class DepartmentsModule {}
-

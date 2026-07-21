@@ -1,175 +1,136 @@
-# USPA - Implementation Plan
+# USPA Development Plan v2.0
 
-## Phase 1: Foundation Expansion
-
-### Step 2: Enhanced Prisma Schema
-Add missing models to `prisma/schema.prisma`:
-- **User** - Student, Faculty Admin, Admissions Officer, Super Admin roles
-- **Role** enum - STUDENT, FACULTY_ADMIN, ADMISSIONS_OFFICER, SUPER_ADMIN
-- **Career** - Career paths linked to programmes
-- **Keyword** - Search keywords linked to programmes
-- **ProgrammeCareer** - Many-to-many Programme ↔ Career
-- **ProgrammeKeyword** - Many-to-many Programme ↔ Keyword
-- **SavedProgramme** - User's saved/favourite programmes
-- **SearchHistory** - User search tracking
-- **Announcement** - University announcements
-- **AdmissionRule** - Structured rule with conditions, hierarchy
-- **RuleCondition** - Individual conditions for admission rules
-- **AuditLog** - System audit trail
-
-### Step 3: Install New Dependencies
-- API: `bcrypt`, `@nestjs/jwt`, `@nestjs/passport`, `passport`, `passport-jwt`, `openai`, `class-validator`, `class-transformer`, `@types/bcrypt`
-- Web: `lucide-react`, `clsx`, `tailwind-merge`, `class-variance-authority`, `@radix-ui/*` components
-
-### Step 4: Generate Migration & Build Seed Data
-- Run `npx prisma migrate dev`
-- Comprehensive seed with:
-  - All UBa faculties: FASA, FHS, FET, FLA, FSE, HTTTC Bambili, HTTTC Kumba, COLTECH, CBMS, etc.
-  - Departments under each faculty
-  - Realistic programmes with codes, degrees, durations
-  - O/A Level subjects
-  - Programme requirements matching real UBa criteria
-  - Careers linked to programmes
-  - Keywords for search
-  - General admission rules
-  - Tuition fees
-
-### Step 5: Populate Shared Packages
-- `packages/types/` - TypeScript interfaces, DTOs, API response types
-- `packages/validation/` - Zod schemas for input validation
-- `packages/utils/` - Helper functions (grade comparison, etc.)
-- `packages/config/` - Constants, enums, role definitions
-
-### Step 6: PrismaModule & Global Database Service
-- Create `PrismaModule` with global `PrismaService`
-- Wire into `AppModule`
+**Version:** 0.1.0 | **Current Phase:** Foundation Complete → Phase 2: Backend Core API
 
 ---
 
-## Phase 2: API Backend
+## Phase 1: Foundation ✅ (Complete)
 
-### Step 7: Faculties Module
-- `FacultiesController`, `FacultiesService`, `FacultiesModule`
-- Endpoints: GET /faculties, GET /faculties/:id, GET /departments/:id/programmes
+### Infrastructure
+- ✅ Turbo Monorepo setup with npm workspaces
+- ✅ Next.js 16 frontend (apps/web)
+- ✅ NestJS backend (apps/api)
+- ✅ Prisma ORM v7 with PostgreSQL
+- ✅ TypeScript throughout
+- ✅ Git repository
+- ✅ VS Code workspace
 
-### Step 8: Programmes Module
-- `ProgrammesController`, `ProgrammesService`, `ProgrammesModule`
-- Search, filter, detail views with full-text search
-- Auto-complete endpoint
+### Database Schema
+- ✅ University, AcademicUnit, Department, Programme
+- ✅ Subject (O/A Level), ProgrammeRequirement
+- ✅ Tuition, Career, ProgrammeCareer, Keyword, ProgrammeKeyword
+- ✅ User, SavedProgramme, SearchHistory, Announcement
+- ✅ GeneralAdmissionRule
+- ✅ Prisma migration generated
+- ✅ Seed data with UBa academic catalogue
 
-### Step 9: Admission Rule Engine
-- Rule evaluation service
-- University → Faculty → Department → Programme hierarchy
-- Configurable condition evaluation
-
-### Step 10: Eligibility Checker
-- POST /eligibility/check endpoint
-- O/A Level subject + grade evaluation
-- Returns: Eligible / Conditionally Eligible / Not Eligible with detailed reasons
-
-### Step 11: Recommendation Engine
-- Similar programmes based on subjects, careers
-- Alternative suggestions
-- Career-based exploration
-
-### Step 12: AI Advisor Module
-- OpenAI integration with RAG
-- Natural language understanding for programme queries
-
-### Step 13: Auth Module
-- JWT-based authentication
-- Registration, login, profile
-- Role-based guards
-
-### Step 14: Favourites & Compare
-- Save/list/delete favourite programmes
-- Compare multiple programmes side-by-side
-
-### Step 15: Admin Module
-- CRUD for programmes, users, faculties, departments
-- Analytics dashboards
+### Development Environment
+- ✅ PostgreSQL configured
+- ✅ Prisma migrations
+- ✅ Prisma Client generation
+- ✅ NestJS app structure
+- ✅ Next.js app structure
 
 ---
 
-## Phase 3: Web Frontend
+## Phase 2: Backend Core API 🟡 (Current)
 
-### Step 16: UI Package & shadcn/ui Setup
-- Button, Card, Input, Dialog, Badge, etc.
+Build a stable REST API before designing the frontend.
 
-### Step 17: Layout & Navigation
-- Header with search, nav links, auth
-- Footer
-- Mobile responsive sidebar
+| Step | Module | Status | Deliverables |
+|------|--------|--------|-------------|
+| 2.1 | Prisma Module | ✅ Done | PrismaModule, PrismaService, global DI |
+| 2.2 | Academic Unit Module | 🟡 In Progress | GET /academic-units, GET /:id, POST, PATCH, DELETE |
+| 2.3 | Programme Module | 🟡 In Progress | GET /programmes, GET /:code, POST, PATCH, DELETE |
+| 2.4 | Subject Module | 🔲 Pending | GET /subjects, POST, PATCH, DELETE |
+| 2.5 | Programme Requirements | 🔲 Pending | GET /programmes/:id/requirements, POST, PATCH, DELETE |
+| 2.6 | Search Engine | 🔲 Pending | Full text search, filters, autocomplete |
+| 2.7 | Eligibility Engine | 🟡 In Progress | POST /eligibility/check (MVP done) |
+| 2.8 | Authentication | 🔲 Pending | JWT admin-only auth |
+| 2.9 | Admin Dashboard API | 🟡 In Progress | Dashboard stats, programme/user mgmt |
 
-### Step 18: Home Page
-- Hero with search bar
-- Featured programmes
-- Faculty quick links
-- Stats section
-
-### Step 19: Programme Search & Listing
-- Advanced filters
-- Grid/list toggle
-- Pagination
-- Search results
-
-### Step 20: Programme Detail Page
-- Overview tab
-- Requirements tab
-- Tuition tab
-- Careers tab
-- Similar programmes sidebar
-
-### Step 21: Faculty/Department Pages
-- Faculty detail with departments
-- Department detail with programmes
-
-### Step 22: Admission Checker Page
-- Multi-step form: O/L subjects → A/L subjects → Results
-- Eligibility visualization
-
-### Step 23: AI Advisor Chat
-- Chat interface with message bubbles
-- Streaming responses
-- Suggested questions
-
-### Step 24: Auth Pages
-- Login form
-- Registration form
-- Profile page
-
-### Step 25: Favourites & Compare
-- Saved programmes list
-- Compare view (table comparison)
-
-### Step 26: Admin Dashboard
-- Overview stats
-- Programme management table
-- User management
-- Analytics charts
+### Implementation Order
+1. ✅ Prisma Module — Single database service
+2. **Academic Unit Module** — CRUD with validation, pagination, search
+3. **Programme Module** — CRUD with degree/faculty filters
+4. **Subject Module** — CRUD for O/A Level subjects
+5. **Programme Requirements** — Manage admission requirements
+6. **Search Engine** — Full text search, autocomplete
+7. **Eligibility Engine** — Subject/grade evaluation
+8. **Authentication** — Admin-only JWT auth
+9. **Admin Dashboard API** — Full management endpoints
 
 ---
 
-## Phase 4: Integration & Polish
+## Phase 3: Data Management 🔲
 
-### Step 27: API-Web Integration
-- React Query setup
-- API client service
-- Environment configuration
+- Manual Entry (forms for university, faculty, programme, tuition, requirements)
+- Excel Import (upload → validate → preview → import)
+- JSON Import (upload → validate → preview → import)
+- Duplicate Detection (faculties, programmes, subjects)
 
-### Step 28: Error Handling & UX
-- Toast notifications
-- Loading skeletons
-- Empty states
-- Error boundaries
+---
 
-### Step 29: Responsive Design & Dark Mode
-- Mobile-first responsive
-- Dark mode with persistence
-- Accessibility improvements
+## Phase 4: Frontend (Student Portal) 🔲
 
-### Step 30: Testing
-- API unit tests
-- E2E tests
-- Component tests
+- Home, Academic Units, Programmes, Programme Details
+- Search, Eligibility Checker, Login, Register
+- Cards, Tables, Filters, Pagination, Navigation
+
+---
+
+## Phase 5: Advanced Features 🔲
+
+- Programme Comparison (tuition, duration, requirements, careers)
+- Saved Programmes (bookmark programmes)
+- Search History (track previous searches)
+- Recommendations (related programmes)
+- Announcements (programme-specific notices)
+
+---
+
+## Phase 6: AI Integration 🔲
+
+- Natural language assistant
+- Conversation memory
+- Personalized recommendations
+- Career guidance
+
+---
+
+## Phase 7: Administration Portal 🔲
+
+- Dashboard, Academic Units, Programmes, Subjects
+- Requirements, Users, Announcements
+- Imports, System Settings, Analytics
+
+---
+
+## Current Backend Module Status
+
+| Module | Type | Status |
+|--------|------|--------|
+| PrismaModule | Infrastructure | ✅ Done |
+| FacultiesController | Read-only | ⚠️ Needs CRUD |
+| DepartmentsController | Read-only | ⚠️ Needs CRUD |
+| ProgrammesController | Read-only | ⚠️ Needs CRUD |
+| EligibilityController | Action | ✅ MVP |
+| RecommendationsController | Read-only | ✅ MVP |
+| AiController | Action | ✅ MVP |
+| AuthController | Auth | ⚠️ Needs admin-only |
+| FavouritesController | Auth | ✅ MVP |
+| CompareController | Action | ✅ MVP |
+| AdminController | Admin | 🟡 Partial |
+
+---
+
+## Development Principles
+
+1. Build the backend before the frontend
+2. Complete one module before starting another
+3. Test every endpoint before moving on
+4. Keep the Prisma schema stable
+5. Never hardcode programme data; all data managed through Admin Portal
+6. Keep MVP focused on University of Bamenda; architecture supports multiple universities
+7. Document each phase before beginning the next
 

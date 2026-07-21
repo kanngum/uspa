@@ -23,7 +23,7 @@ export function useAddFavourite() {
 export function useRemoveFavourite() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.removeFavourite(id),
+    mutationFn: (programmeId: string) => api.removeFavourite(programmeId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["favourites"] });
     },

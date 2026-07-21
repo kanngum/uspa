@@ -75,7 +75,9 @@ export class AdminService {
     return this.prisma.searchHistory.findMany({
       take: limit,
       orderBy: { createdAt: 'desc' },
-      include: { user: { select: { id: true, firstName: true, lastName: true } } },
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true } },
+      },
     });
   }
 
@@ -244,6 +246,146 @@ export class AdminService {
     return updated;
   }
 
+  // ==================== CREATE PROGRAMME ====================
+
+  async createProgramme(input: {
+    departmentId: string;
+    code: string;
+    name: string;
+    degree: string;
+    level: string;
+    duration: number;
+    description?: string;
+  }) {
+    // Check code uniqueness
+    const existing = await this.prisma.programme.findUnique({
+      where: { code: input.code },
+    });
+    if (existing) {
+      throw new Error(`Programme with code "${input.code}" already exists`);
+    }
+
+    return this.prisma.programme.create({
+      data: {
+        departmentId: input.departmentId,
+        code: input.code,
+        name: input.name,
+        degree: input.degree as any,
+        level: input.level as any,
+        duration: input.duration,
+        description: input.description,
+      },
+      include: {
+        department: {
+          include: {
+            academicUnit: {
+              select: { id: true, name: true, abbreviation: true },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  // ==================== SUBJECT MANAGEMENT ====================
+
+  async getAllSubjects(
+    page: number = 1,
+    limit: number = 50,
+    search?: string,
+    level?: string,
+  ) {
+    const skip = (page - 1) * limit;
+    const where: any = {};
+
+    if (search?.trim()) {
+      where.OR = [
+        { name: { contains: search.trim(), mode: 'insensitive' } },
+        { code: { contains: search.trim(), mode: 'insensitive' } },
+      ];
+    }
+
+    if (level) {
+      where.level = level;
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.subject.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.subject.count({ where }),
+    ]);
+
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async createSubject(input: { name: string; code?: string; level: string }) {
+    const existing = await this.prisma.subject.findUnique({
+      where: { name: input.name },
+    });
+    if (existing) {
+      throw new Error(`Subject "${input.name}" already exists`);
+    }
+
+    return this.prisma.subject.create({
+      data: {
+        name: input.name,
+        code: input.code,
+        level: input.level as any,
+      },
+    });
+  }
+
+  async updateSubject(
+    id: string,
+    input: { name?: string; code?: string; level?: string },
+  ) {
+    const subject = await this.prisma.subject.findUnique({ where: { id } });
+    if (!subject) {
+      throw new Error('Subject not found');
+    }
+
+    if (input.name && input.name !== subject.name) {
+      const existing = await this.prisma.subject.findUnique({
+        where: { name: input.name },
+      });
+      if (existing) {
+        throw new Error(`Subject "${input.name}" already exists`);
+      }
+    }
+
+    return this.prisma.subject.update({
+      where: { id },
+      data: {
+        ...(input.name !== undefined && { name: input.name }),
+        ...(input.code !== undefined && { code: input.code }),
+        ...(input.level !== undefined && { level: input.level as any }),
+      },
+    });
+  }
+
+  async deleteSubject(id: string) {
+    const subject = await this.prisma.subject.findUnique({ where: { id } });
+    if (!subject) {
+      throw new Error('Subject not found');
+    }
+
+    const count = await this.prisma.programmeRequirement.count({
+      where: { subjectId: id },
+    });
+    if (count > 0) {
+      throw new Error(
+        `Cannot delete "${subject.name}" - used in ${count} programme requirement(s)`,
+      );
+    }
+
+    await this.prisma.subject.delete({ where: { id } });
+    return { message: 'Subject deleted successfully' };
+  }
+
   // ==================== FACULTY/DEPARTMENT MANAGEMENT ====================
 
   async createFaculty(input: {
@@ -337,4 +479,3 @@ export class AdminService {
     return { message: 'Announcement deleted' };
   }
 }
-

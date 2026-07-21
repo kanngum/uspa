@@ -7,4 +7,3 @@ import { CompareService } from './compare.service';
   providers: [CompareService],
 })
 export class CompareModule {}
-

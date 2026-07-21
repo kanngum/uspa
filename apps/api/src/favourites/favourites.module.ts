@@ -8,4 +8,3 @@ import { FavouritesService } from './favourites.service';
   exports: [FavouritesService],
 })
 export class FavouritesModule {}
-

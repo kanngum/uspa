@@ -24,10 +24,11 @@ export class RecommendationsController {
     @Query('q') careerName: string,
     @Query('limit') limit?: string,
   ) {
-    const programmes = await this.recommendationsService.getCareerRecommendations(
-      careerName,
-      limit ? parseInt(limit, 10) : 10,
-    );
+    const programmes =
+      await this.recommendationsService.getCareerRecommendations(
+        careerName,
+        limit ? parseInt(limit, 10) : 10,
+      );
     return { success: true, data: programmes };
   }
 
@@ -37,10 +38,11 @@ export class RecommendationsController {
     @Query('limit') limit?: string,
   ) {
     const ids = subjectIds.split(',');
-    const programmes = await this.recommendationsService.getSubjectRecommendations(
-      ids,
-      limit ? parseInt(limit, 10) : 10,
-    );
+    const programmes =
+      await this.recommendationsService.getSubjectRecommendations(
+        ids,
+        limit ? parseInt(limit, 10) : 10,
+      );
     return { success: true, data: programmes };
   }
 
@@ -58,4 +60,3 @@ export class RecommendationsController {
     return { success: true, data: programmes };
   }
 }
-

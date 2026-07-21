@@ -11,7 +11,7 @@ export interface AiQueryInput {
 export interface AiResponse {
   message: string;
   suggestions: string[];
-programmes?: Array<{
+  programmes?: Array<{
     id: string;
     name: string;
     code: string;
@@ -69,15 +69,51 @@ export class AiService {
   }
 
   private detectIntent(query: string): string {
-    const careerWords = ['career', 'job', 'work as', 'become a', 'profession', 'occupation'];
+    const careerWords = [
+      'career',
+      'job',
+      'work as',
+      'become a',
+      'profession',
+      'occupation',
+    ];
     const facultyWords = ['faculty', 'school of', 'department of'];
-    const programmeWords = ['tell me about', 'what is', 'details', 'information about', 'programme'];
-    const eligibilityWords = ['qualify', 'eligible', 'can i study', 'can i do', 'requirements', 'subjects', 'i have'];
-    const subjectWords = ['i have', 'i study', 'my subjects', 'i took', 'biology', 'chemistry', 'physics', 'mathematics', 'english', 'french', 'geography', 'economics', 'history'];
+    const programmeWords = [
+      'tell me about',
+      'what is',
+      'details',
+      'information about',
+      'programme',
+    ];
+    const eligibilityWords = [
+      'qualify',
+      'eligible',
+      'can i study',
+      'can i do',
+      'requirements',
+      'subjects',
+      'i have',
+    ];
+    const subjectWords = [
+      'i have',
+      'i study',
+      'my subjects',
+      'i took',
+      'biology',
+      'chemistry',
+      'physics',
+      'mathematics',
+      'english',
+      'french',
+      'geography',
+      'economics',
+      'history',
+    ];
 
     if (careerWords.some((w) => query.includes(w))) return 'career_search';
     if (facultyWords.some((w) => query.includes(w))) return 'faculty_search';
-    if (programmeWords.some((w) => query.includes(w))) return 'programme_detail';
+    if (programmeWords.some((w) => query.includes(w)))
+      return 'programme_detail';
     if (eligibilityWords.some((w) => query.includes(w))) return 'eligibility';
     if (subjectWords.some((w) => query.includes(w))) return 'subject_search';
 
@@ -123,15 +159,15 @@ export class AiService {
       }
 
       return {
-          message: `Based on your subjects (${detectedSubjects.join(', ')}), here are programmes you might be interested in:`,
-          programmes: programmes.map((p) => ({
-            id: p.id,
-            name: p.name,
-            code: p.code,
-            degree: p.degree,
-            faculty: p.department?.academicUnit?.abbreviation ?? '',
-            relevance: `Shares ${p._count.requirements} subject requirements`,
-          })),
+        message: `Based on your subjects (${detectedSubjects.join(', ')}), here are programmes you might be interested in:`,
+        programmes: programmes.map((p) => ({
+          id: p.id,
+          name: p.name,
+          code: p.code,
+          degree: p.degree,
+          faculty: p.department?.academicUnit?.abbreviation ?? '',
+          relevance: `Shares ${p._count.requirements} subject requirements`,
+        })),
         suggestions: [
           'What are the requirements for these programmes?',
           'Tell me more about a specific programme',
@@ -179,7 +215,8 @@ export class AiService {
 
     if (!careerTerm) {
       return {
-        message: 'What career are you interested in? For example: "I want to become a doctor" or "Careers in engineering"',
+        message:
+          'What career are you interested in? For example: "I want to become a doctor" or "Careers in engineering"',
         suggestions: [
           'I want to become a doctor',
           'Careers in engineering',
@@ -249,9 +286,10 @@ export class AiService {
       },
     });
 
-    const matchedFaculty = faculties.find((f) =>
-      query.includes(f.name.toLowerCase()) ||
-      (f.abbreviation && query.includes(f.abbreviation.toLowerCase())),
+    const matchedFaculty = faculties.find(
+      (f) =>
+        query.includes(f.name.toLowerCase()) ||
+        (f.abbreviation && query.includes(f.abbreviation.toLowerCase())),
     );
 
     if (matchedFaculty) {
@@ -297,22 +335,25 @@ export class AiService {
       },
     });
 
-    const matchedProgramme = programmes.find((p) =>
-      query.includes(p.name.toLowerCase()) ||
-      query.includes(p.code.toLowerCase()),
+    const matchedProgramme = programmes.find(
+      (p) =>
+        query.includes(p.name.toLowerCase()) ||
+        query.includes(p.code.toLowerCase()),
     );
 
     if (matchedProgramme) {
       return {
         message: `I can help you learn more about **${matchedProgramme.name} (${matchedProgramme.code})**.\n\nClick on the programme to view:\n• Full admission requirements\n• Tuition fees\n• Career opportunities\n• Similar programmes\n• Eligibility check`,
-        programmes: [{
-          id: matchedProgramme.id,
-          name: matchedProgramme.name,
-          code: matchedProgramme.code,
-          degree: matchedProgramme.degree,
-          faculty: matchedProgramme.department.academicUnit.abbreviation,
-          relevance: `${matchedProgramme.duration} years`,
-        }],
+        programmes: [
+          {
+            id: matchedProgramme.id,
+            name: matchedProgramme.name,
+            code: matchedProgramme.code,
+            degree: matchedProgramme.degree,
+            faculty: matchedProgramme.department.academicUnit.abbreviation,
+            relevance: `${matchedProgramme.duration} years`,
+          },
+        ],
         suggestions: [
           'Check my eligibility for this programme',
           'What are the O Level requirements?',
@@ -333,7 +374,8 @@ export class AiService {
   ): Promise<AiResponse> {
     if (detectedSubjects.length === 0) {
       return {
-        message: 'To check your eligibility, please tell me which subjects you have. For example:\n• "I have Biology, Chemistry and Geography"\n• "I studied Physics, Mathematics and Computer Science"\n• "My subjects are English, History and Literature"',
+        message:
+          'To check your eligibility, please tell me which subjects you have. For example:\n• "I have Biology, Chemistry and Geography"\n• "I studied Physics, Mathematics and Computer Science"\n• "My subjects are English, History and Literature"',
         suggestions: [
           'I have Biology, Chemistry and Mathematics',
           'I studied Physics, Economics and Geography',
@@ -443,4 +485,3 @@ export class AiService {
     ];
   }
 }
-

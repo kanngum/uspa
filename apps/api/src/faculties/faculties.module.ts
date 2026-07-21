@@ -8,4 +8,3 @@ import { FacultiesService } from './faculties.service';
   exports: [FacultiesService],
 })
 export class FacultiesModule {}
-

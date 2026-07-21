@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -29,6 +30,9 @@ enum DegreeType {
   MA
   MENG
   PHD
+  CERTIFICATE
+  BTECH
+  HPD
 }
 
 enum ProgrammeLevel {
@@ -49,27 +53,9 @@ enum RequirementType {
 }
 
 enum UserRole {
+  VISITOR
   STUDENT
-  FACULTY_ADMIN
-  ADMISSIONS_OFFICER
-  SUPER_ADMIN
-}
-
-enum RuleEntityType {
-  UNIVERSITY
-  FACULTY
-  DEPARTMENT
-  PROGRAMME
-}
-
-enum RuleOperator {
-  MIN_SUBJECTS
-  MIN_GRADE
-  REQUIRED_SUBJECT
-  OPTIONAL_SUBJECT
-  MIN_PASSES
-  SPECIFIC_GRADE_IN
-  SUBJECT_COMBINATION
+  ADMIN
 }
 
 enum EligibilityStatus {
@@ -83,45 +69,39 @@ enum EligibilityStatus {
 //////////////////////////////////////////////////
 
 model University {
-  id           String  @id @default(uuid())
+  id           String  @id @default(cuid())
   name         String
   abbreviation String  @unique
   website      String?
   description  String?
-
-  academicUnits AcademicUnit[]
-  admissionRules AdmissionRule[]
-  announcements Announcement[]
+  email        String?
+  phone        String?
+  address      String?
+  logo         String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  academicUnits AcademicUnit[]
 }
 
 //////////////////////////////////////////////////
-// ACADEMIC UNITS (Faculties/Schools)
+// FACULTIES / SCHOOLS
 //////////////////////////////////////////////////
 
 model AcademicUnit {
-  id String @id @default(uuid())
-
-  universityId String
-
-  name String
-
-  abbreviation String?
-
-  type AcademicUnitType
-
-  description String?
-
-  university University @relation(fields: [universityId], references: [id], onDelete: Cascade)
-
-  departments Department[]
-  admissionRules AdmissionRule[]
+  id            String @id @default(cuid())
+  universityId  String
+  name          String
+  abbreviation  String?
+  type          AcademicUnitType
+  description   String?
 
   createdAt DateTime @default(now())
-
   updatedAt DateTime @updatedAt
+
+  university   University   @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  departments  Department[]
 
   @@unique([universityId, name])
 }
@@ -131,24 +111,17 @@ model AcademicUnit {
 //////////////////////////////////////////////////
 
 model Department {
-  id String @id @default(uuid())
-
+  id             String @id @default(cuid())
   academicUnitId String
-
-  name String
-
-  abbreviation String?
-
-  description String?
-
-  academicUnit AcademicUnit @relation(fields: [academicUnitId], references: [id], onDelete: Cascade)
-
-  programmes Programme[]
-  admissionRules AdmissionRule[]
+  name           String
+  abbreviation   String?
+  description    String?
 
   createdAt DateTime @default(now())
-
   updatedAt DateTime @updatedAt
+
+  academicUnit AcademicUnit @relation(fields: [academicUnitId], references: [id], onDelete: Cascade)
+  programmes   Programme[]
 
   @@unique([academicUnitId, name])
 }
@@ -158,185 +131,27 @@ model Department {
 //////////////////////////////////////////////////
 
 model Programme {
-  id String @id @default(uuid())
-
+  id           String @id @default(cuid())
   departmentId String
+  code         String @unique
+  name         String
+  degree       DegreeType
+  level        ProgrammeLevel
+  duration     Int
+  description  String?
+  isActive     Boolean @default(true)
 
-  code String @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  name String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
 
-  degree DegreeType
-
-  level ProgrammeLevel
-
-  duration Int
-
-  description String?
-
-  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-
+  tuition      Tuition[]
   requirements ProgrammeRequirement[]
-  tuition Tuition[]
-  careers ProgrammeCareer[]
-  keywords ProgrammeKeyword[]
-  admissionRules AdmissionRule[]
-  savedProgrammes SavedProgramme[]
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  @@index([name])
-}
-
-//////////////////////////////////////////////////
-// SUBJECTS (O/A Level)
-//////////////////////////////////////////////////
-
-model Subject {
-  id String @id @default(uuid())
-
-  name String @unique
-
-  level SubjectLevel
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  requirements ProgrammeRequirement[]
-}
-
-//////////////////////////////////////////////////
-// PROGRAMME REQUIREMENTS
-//////////////////////////////////////////////////
-
-model ProgrammeRequirement {
-  id String @id @default(uuid())
-
-  programmeId String
-
-  subjectId String
-
-  requirementType RequirementType
-
-  minimumGrade String?
-
-  programme Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
-
-  subject Subject @relation(fields: [subjectId], references: [id])
-
-  @@unique([programmeId, subjectId])
-}
-
-//////////////////////////////////////////////////
-// CAREERS
-//////////////////////////////////////////////////
-
-model Career {
-  id          String @id @default(uuid())
-  name        String @unique
-  description String?
-
-  programmes ProgrammeCareer[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model ProgrammeCareer {
-  programmeId String
-  careerId    String
-
-  programme Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
-  career    Career    @relation(fields: [careerId], references: [id], onDelete: Cascade)
-
-  @@id([programmeId, careerId])
-}
-
-//////////////////////////////////////////////////
-// KEYWORDS (Search)
-//////////////////////////////////////////////////
-
-model Keyword {
-  id   String @id @default(uuid())
-  word String @unique
-
-  programmes ProgrammeKeyword[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model ProgrammeKeyword {
-  programmeId String
-  keywordId   String
-
-  programme Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
-  keyword   Keyword   @relation(fields: [keywordId], references: [id], onDelete: Cascade)
-
-  @@id([programmeId, keywordId])
-}
-
-//////////////////////////////////////////////////
-// GENERAL ADMISSION RULES
-//////////////////////////////////////////////////
-
-model GeneralAdmissionRule {
-  id String @id @default(uuid())
-
-  title String
-
-  description String
-
-  isActive Boolean @default(true)
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-}
-
-//////////////////////////////////////////////////
-// STRUCTURED ADMISSION RULES (Rule Engine)
-//////////////////////////////////////////////////
-
-model AdmissionRule {
-  id              String         @id @default(uuid())
-  entityType      RuleEntityType
-  universityId    String?
-  academicUnitId  String?
-  departmentId    String?
-  programmeId     String?
-  priority        Int            @default(0)
-  description     String?
-  isActive        Boolean        @default(true)
-
-  university   University?   @relation(fields: [universityId], references: [id], onDelete: Cascade)
-  academicUnit AcademicUnit? @relation(fields: [academicUnitId], references: [id], onDelete: Cascade)
-  department   Department?   @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  programme    Programme?    @relation(fields: [programmeId], references: [id], onDelete: Cascade)
-
-  conditions RuleCondition[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([entityType, isActive])
-}
-
-model RuleCondition {
-  id            String       @id @default(uuid())
-  admissionRuleId String
-  operator      RuleOperator
-  field         String?
-  value         String       // JSON value for the condition
-  description   String?
-
-  rule AdmissionRule @relation(fields: [admissionRuleId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  careers      ProgrammeCareer[]
+  keywords     ProgrammeKeyword[]
+  announcements Announcement[]
+  savedBy      SavedProgramme[]
 }
 
 //////////////////////////////////////////////////
@@ -344,47 +159,130 @@ model RuleCondition {
 //////////////////////////////////////////////////
 
 model Tuition {
-  id String @id @default(uuid())
-
-  programmeId String
-
+  id           String @id @default(cuid())
+  programmeId  String
   academicYear String
-
-  amount Decimal @db.Decimal(12, 2)
-
-  currency String @default("XAF")
-
-  programme Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  amount       Decimal @db.Decimal(12, 2)
+  currency     String @default("XAF")
 
   createdAt DateTime @default(now())
-
   updatedAt DateTime @updatedAt
+
+  programme Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
 
   @@unique([programmeId, academicYear])
 }
 
 //////////////////////////////////////////////////
-// USERS & AUTHENTICATION
+// SUBJECTS
+//////////////////////////////////////////////////
+
+model Subject {
+  id   String @id @default(cuid())
+  name String @unique
+  code String?
+
+  level SubjectLevel
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  requirements ProgrammeRequirement[]
+}
+
+//////////////////////////////////////////////////
+// REQUIREMENTS
+//////////////////////////////////////////////////
+
+model ProgrammeRequirement {
+  id             String          @id @default(cuid())
+  programmeId    String
+  subjectId      String
+  requirementType RequirementType @default(REQUIRED)
+  minimumGrade   String?
+
+  programme Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  subject   Subject   @relation(fields: [subjectId], references: [id])
+
+  @@unique([programmeId, subjectId])
+}
+
+//////////////////////////////////////////////////
+// GENERAL ADMISSION RULES
+//////////////////////////////////////////////////
+
+model GeneralAdmissionRule {
+  id          String  @id @default(cuid())
+  title       String
+  description String
+  isActive    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+//////////////////////////////////////////////////
+// CAREERS
+//////////////////////////////////////////////////
+
+model Career {
+  id   String @id @default(cuid())
+  name String @unique
+  description String?
+
+  programmes ProgrammeCareer[]
+}
+
+model ProgrammeCareer {
+  programmeId String
+  careerId    String
+
+  programme Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  career    Career    @relation(fields: [careerId], references: [id])
+
+  @@id([programmeId, careerId])
+}
+
+//////////////////////////////////////////////////
+// KEYWORDS
+//////////////////////////////////////////////////
+
+model Keyword {
+  id   String @id @default(cuid())
+  word String @unique
+
+  programmes ProgrammeKeyword[]
+}
+
+model ProgrammeKeyword {
+  programmeId String
+  keywordId   String
+
+  programme Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  keyword   Keyword   @relation(fields: [keywordId], references: [id])
+
+  @@id([programmeId, keywordId])
+}
+
+//////////////////////////////////////////////////
+// USERS
 //////////////////////////////////////////////////
 
 model User {
-  id             String   @id @default(uuid())
-  email          String   @unique
-  passwordHash   String
-  firstName      String
-  lastName       String
-  role           UserRole @default(STUDENT)
-  isActive       Boolean  @default(true)
-
-  savedProgrammes  SavedProgramme[]
-  searchHistory    SearchHistory[]
-  announcements    Announcement[]   @relation("createdByUser")
+  id           String   @id @default(cuid())
+  firstName    String
+  lastName     String
+  email        String   @unique
+  passwordHash String
+  role         UserRole @default(VISITOR)
+  isActive     Boolean  @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([email])
-  @@index([role])
+  savedProgrammes SavedProgramme[]
+  searchHistory   SearchHistory[]
+  announcements   Announcement[]
 }
 
 //////////////////////////////////////////////////
@@ -392,14 +290,13 @@ model User {
 //////////////////////////////////////////////////
 
 model SavedProgramme {
-  id          String   @id @default(uuid())
+  id          String   @id @default(cuid())
   userId      String
   programmeId String
+  createdAt   DateTime @default(now())
 
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   programme Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
 
   @@unique([userId, programmeId])
 }
@@ -409,18 +306,12 @@ model SavedProgramme {
 //////////////////////////////////////////////////
 
 model SearchHistory {
-  id        String   @id @default(uuid())
-  userId    String?
+  id        String   @id @default(cuid())
+  userId    String
   query     String
-  filters   String?  // JSON of applied filters
-  resultsCount Int?
-
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
-
   createdAt DateTime @default(now())
 
-  @@index([userId])
-  @@index([createdAt])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 //////////////////////////////////////////////////
@@ -428,37 +319,17 @@ model SearchHistory {
 //////////////////////////////////////////////////
 
 model Announcement {
-  id         String   @id @default(uuid())
+  id         String @id @default(cuid())
   title      String
   content    String
-  published  Boolean  @default(false)
+  programmeId String?
   authorId   String
-
-  author     User       @relation("createdByUser", fields: [authorId], references: [id])
-  universityId String?
-  university University? @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  published Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([published, createdAt])
+  programme Programme? @relation(fields: [programmeId], references: [id])
+  author    User       @relation(fields: [authorId], references: [id])
 }
 
-//////////////////////////////////////////////////
-// AUDIT LOGS
-//////////////////////////////////////////////////
-
-model AuditLog {
-  id         String   @id @default(uuid())
-  action     String
-  entityType String
-  entityId   String?
-  userId     String?
-  metadata   String?  // JSON additional data
-
-  createdAt DateTime @default(now())
-
-  @@index([entityType, entityId])
-  @@index([userId])
-  @@index([createdAt])
-}

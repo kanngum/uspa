@@ -12,10 +12,13 @@ import {
   Request,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 import { AdminService } from './admin.service';
 
 @Controller('admin')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), RolesGuard)
+@Roles('ADMIN')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
@@ -70,10 +73,7 @@ export class AdminController {
   }
 
   @Put('programmes/:id')
-  async updateProgramme(
-    @Param('id') id: string,
-    @Body() input: any,
-  ) {
+  async updateProgramme(@Param('id') id: string, @Body() input: any) {
     const programme = await this.adminService.updateProgramme(id, input);
     return { success: true, data: programme };
   }
@@ -111,6 +111,55 @@ export class AdminController {
   async toggleUserActive(@Param('id') id: string) {
     const user = await this.adminService.toggleUserActive(id);
     return { success: true, data: user };
+  }
+
+  // ==================== CREATE PROGRAMME ====================
+
+  @Post('programmes')
+  async createProgramme(@Body() input: any) {
+    const programme = await this.adminService.createProgramme(input);
+    return { success: true, data: programme };
+  }
+
+  // ==================== SUBJECT MANAGEMENT ====================
+
+  @Get('subjects')
+  async getAllSubjects(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('level') level?: string,
+  ) {
+    const data = await this.adminService.getAllSubjects(
+      page ? parseInt(page, 10) : 1,
+      limit ? parseInt(limit, 10) : 50,
+      search,
+      level,
+    );
+    return { success: true, ...data };
+  }
+
+  @Post('subjects')
+  async createSubject(
+    @Body() input: { name: string; code?: string; level: string },
+  ) {
+    const subject = await this.adminService.createSubject(input);
+    return { success: true, data: subject };
+  }
+
+  @Put('subjects/:id')
+  async updateSubject(
+    @Param('id') id: string,
+    @Body() input: { name?: string; code?: string; level?: string },
+  ) {
+    const subject = await this.adminService.updateSubject(id, input);
+    return { success: true, data: subject };
+  }
+
+  @Delete('subjects/:id')
+  async deleteSubject(@Param('id') id: string) {
+    const result = await this.adminService.deleteSubject(id);
+    return { success: true, data: result };
   }
 
   // ==================== FACULTY/DEPARTMENT MANAGEMENT ====================
@@ -173,4 +222,3 @@ export class AdminController {
     return { success: true, data: result };
   }
 }
-

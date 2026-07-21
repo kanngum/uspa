@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Clock, Building2, BookOpen, GraduationCap, Heart, Share2, CheckCircle2, AlertCircle, ChevronRight, Award, Users } from "lucide-react";
@@ -39,15 +39,27 @@ export default function ProgrammeDetailPage() {
 
   // Determine if this programme is in user's favourites
   const favourites = favData?.data || [];
-  const favRecord = favourites.find((f: any) =>
-    (f.programmeId === programmeId) || (f.programme?.id === programmeId) || (f.id === programmeId)
+  const [isFavourite, setIsFavourite] = useState(
+    favourites.some((f: any) => {
+      const progId = f.programme?.id || f.programmeId || f.id;
+      return progId === programmeId;
+    })
   );
-  const [isFavourite, setIsFavourite] = useState(!!favRecord);
+
+  useEffect(() => {
+    if (favData?.data) {
+      const isSaved = favData.data.some((f: any) => {
+        const progId = f.programme?.id || f.programmeId || f.id;
+        return progId === programmeId;
+      });
+      setIsFavourite(isSaved);
+    }
+  }, [favData, programmeId]);
 
   const handleToggleFavourite = () => {
     if (!programme) return;
-    if (isFavourite && favRecord) {
-      removeFavourite.mutate(favRecord.id, {
+    if (isFavourite) {
+      removeFavourite.mutate(programme.id, {
         onSuccess: () => {
           setIsFavourite(false);
           addToast("Removed from favourites", "success");

@@ -1,4 +1,4 @@
-import { Body, Controller, Post, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { EligibilityService } from './eligibility.service';
 import type { EligibilityCheckInput } from './eligibility.service';
 
@@ -12,4 +12,3 @@ export class EligibilityController {
     return { success: true, data: results };
   }
 }
-

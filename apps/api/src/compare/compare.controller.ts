@@ -19,4 +19,3 @@ export class CompareController {
     return { success: true, data: table };
   }
 }
-

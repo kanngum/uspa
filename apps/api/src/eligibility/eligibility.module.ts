@@ -10,4 +10,3 @@ import { ProgrammesModule } from '../programmes/programmes.module';
   exports: [EligibilityService],
 })
 export class EligibilityModule {}
-

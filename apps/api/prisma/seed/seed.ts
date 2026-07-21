@@ -1,4 +1,8 @@
-import { PrismaClient, DegreeType, ProgrammeLevel, SubjectLevel } from '@prisma/client';
+import "dotenv/config";
+import { PrismaClient } from '../../generated/prisma/client.js';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { DegreeType, ProgrammeLevel, SubjectLevel, UserRole } from '../../generated/prisma/enums.js';
+import * as bcrypt from 'bcrypt';
 import {
   university,
   academicUnits,
@@ -9,7 +13,8 @@ import {
   commonKeywords,
 } from './data';
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log('🌱 Seeding USPA database...\n');
@@ -177,7 +182,7 @@ async function main() {
       }
     }
 
-    // Link Keywords
+    // Link Keywords via ProgrammeKeyword
     for (const keyword of prog.keywords) {
       const keywordId = keywordRecords[keyword.toLowerCase()];
       if (keywordId) {
@@ -215,6 +220,21 @@ async function main() {
     });
   }
   console.log(`   ✅ ${generalAdmissionRules.length} general admission rules created\n`);
+
+  // 9. Create Admin User
+  console.log('👤 Creating Admin User...');
+  const passwordHash = await bcrypt.hash('admin123', 10);
+  const adminUser = await prisma.user.create({
+    data: {
+      firstName: 'Super',
+      lastName: 'Admin',
+      email: 'admin@uba.cm',
+      passwordHash,
+      role: UserRole.ADMIN,
+      isActive: true,
+    },
+  });
+  console.log(`   ✅ Admin user created: ${adminUser.email} (password: admin123)\n`);
 
   console.log('✅✅✅ Database seeding completed successfully! ✅✅✅');
 }

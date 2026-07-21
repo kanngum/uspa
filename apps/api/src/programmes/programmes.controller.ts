@@ -1,4 +1,13 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Query,
+  Body,
+} from '@nestjs/common';
 import { ProgrammesService } from './programmes.service';
 
 @Controller('programmes')
@@ -52,5 +61,45 @@ export class ProgrammesController {
     const programme = await this.programmesService.findByCode(code);
     return { success: true, data: programme };
   }
-}
 
+  @Post()
+  async create(
+    @Body()
+    input: {
+      departmentId: string;
+      code: string;
+      name: string;
+      degree: string;
+      level: string;
+      duration: number;
+      description?: string;
+    },
+  ) {
+    const programme = await this.programmesService.create(input);
+    return { success: true, data: programme };
+  }
+
+  @Patch(':id')
+  async update(
+    @Param('id') id: string,
+    @Body()
+    input: {
+      departmentId?: string;
+      code?: string;
+      name?: string;
+      degree?: string;
+      level?: string;
+      duration?: number;
+      description?: string;
+    },
+  ) {
+    const programme = await this.programmesService.update(id, input);
+    return { success: true, data: programme };
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: string) {
+    const result = await this.programmesService.remove(id);
+    return { success: true, data: result };
+  }
+}

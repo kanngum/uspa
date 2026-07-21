@@ -8,4 +8,3 @@ import { RecommendationsService } from './recommendations.service';
   exports: [RecommendationsService],
 })
 export class RecommendationsModule {}
-
