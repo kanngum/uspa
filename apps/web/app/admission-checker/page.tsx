@@ -159,8 +159,8 @@ export default function AdmissionCheckerPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-8 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
-          <GraduationCap className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#1B2A4A] dark:bg-[#0FA3B1]/20">
+          <GraduationCap className="h-6 w-6 text-white dark:text-[#0FA3B1]" />
         </div>
         <h1 className="mt-4 text-3xl font-bold text-zinc-900 dark:text-zinc-50">Admission Eligibility Checker</h1>
         <p className="mt-2 text-zinc-600 dark:text-zinc-400">
@@ -173,7 +173,7 @@ export default function AdmissionCheckerPage() {
         {[1, 2, 3].map((s) => (
           <div key={s} className="flex items-center gap-2">
             <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
-              (!results && step >= s) || (results && s <= 3) ? "bg-blue-600 text-white" : "bg-zinc-100 text-zinc-400 dark:bg-zinc-800"
+              (!results && step >= s) || (results && s <= 3) ? "bg-[#1B2A4A] text-white" : "bg-zinc-100 text-zinc-400 dark:bg-zinc-800"
             }`}>
               {s}
             </div>

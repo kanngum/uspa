@@ -89,7 +89,7 @@ export default function ComparePage() {
                 </th>
                 {programmes.slice(0, 4).map((prog: any, i: number) => (
                   <th key={i} className="px-6 py-4 text-left">
-                    <Link href={`/programmes/${prog.code}`} className="font-semibold text-zinc-900 hover:text-blue-600 dark:text-zinc-50 dark:hover:text-blue-400">
+                    <Link href={`/programmes/${prog.code}`} className="font-semibold text-zinc-900 hover:text-[#0FA3B1] dark:text-zinc-50 dark:hover:text-[#0FA3B1]">
                       {prog.name}
                     </Link>
                     <p className="mt-1 text-xs text-zinc-500">{prog.code}</p>

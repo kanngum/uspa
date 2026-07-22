@@ -1,0 +1,87 @@
+{
+  "university": {
+    "name": "University of Bamenda",
+    "abbreviation": "UBa",
+    "website": "https://uniba.cm"
+  },
+  "academicUnits": [
+    {
+      "name": "Faculty of Arts",
+      "abbreviation": "FA",
+      "type": "FACULTY",
+      "description": "Faculty of Arts"
+    },
+    {
+      "name": "Faculty of Economics and Management Sciences",
+      "abbreviation": "FEMS",
+      "type": "FACULTY",
+      "description": "Faculty of Economics and Management Sciences"
+    },
+    {
+      "name": "Faculty of Education",
+      "abbreviation": "FED",
+      "type": "FACULTY",
+      "description": "Faculty of Education"
+    },
+    {
+      "name": "Faculty of Health Sciences",
+      "abbreviation": "FHS",
+      "type": "FACULTY",
+      "description": "Faculty of Health Sciences"
+    },
+    {
+      "name": "Faculty of Law and Political Sciences",
+      "abbreviation": "FLPS",
+      "type": "FACULTY",
+      "description": "Faculty of Law and Political Sciences"
+    },
+    {
+      "name": "Faculty of Science",
+      "abbreviation": "FOS",
+      "type": "FACULTY",
+      "description": "Faculty of Science"
+    },
+    {
+      "name": "College of Technology",
+      "abbreviation": "COLTECH",
+      "type": "SCHOOL",
+      "description": "College of Technology"
+    },
+    {
+      "name": "Higher Institute of Commerce and Management",
+      "abbreviation": "HICM",
+      "type": "SCHOOL",
+      "description": "Higher Institute of Commerce and Management"
+    },
+    {
+      "name": "Higher Institute of Transport and Logistics",
+      "abbreviation": "HITL",
+      "type": "SCHOOL",
+      "description": "Higher Institute of Transport and Logistics"
+    },
+    {
+      "name": "Higher Teachers' Training College",
+      "abbreviation": "ENS",
+      "type": "SCHOOL",
+      "description": "Higher Teachers' Training College"
+    },
+    {
+      "name": "Higher Technical Teachers' Training College",
+      "abbreviation": "ENSET",
+      "type": "SCHOOL",
+      "description": "Higher Technical Teachers' Training College"
+    },
+    {
+      "name": "National Higher Polytechnic Institute",
+      "abbreviation": "NAHPI",
+      "type": "SCHOOL",
+      "description": "National Higher Polytechnic Institute"
+    },
+    {
+      "name": "HND / HPD / B.Tech Academic Organ",
+      "abbreviation": "HND",
+      "type": "SCHOOL",
+      "description": "Professional academic structure offering HND, HPD and Bachelor of Technology programmes."
+    }
+  ]
+}

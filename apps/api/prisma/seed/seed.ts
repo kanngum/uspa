@@ -1,7 +1,6 @@
 import "dotenv/config";
-import { PrismaClient } from '../../generated/prisma/client.js';
+import { PrismaClient, DegreeType, ProgrammeLevel, SubjectLevel, UserRole } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { DegreeType, ProgrammeLevel, SubjectLevel, UserRole } from '../../generated/prisma/enums.js';
 import * as bcrypt from 'bcrypt';
 import {
   university,

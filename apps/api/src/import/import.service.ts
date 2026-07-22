@@ -273,12 +273,11 @@ export class ImportService {
         }
       }
 
-      let department = null;
-      if (row.departmentId) {
-        department = departments.find((d) => d.id === row.departmentId);
-      } else if (row.departmentName) {
-        department = departments.find((d) => d.name.toLowerCase() === row.departmentName.toLowerCase());
-      }
+      const department = row.departmentId
+        ? departments.find((d) => d.id === row.departmentId)
+        : row.departmentName
+          ? departments.find((d) => d.name.toLowerCase() === row.departmentName.toLowerCase())
+          : undefined;
 
       preview.push({
         _valid: rowErrors === 0,

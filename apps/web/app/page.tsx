@@ -65,15 +65,15 @@ export default function Home() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
+    <section className="relative bg-gradient-to-br from-[#1B2A4A] via-[#0F1B33] to-[#2A3F66] dark:from-[#0A0F1A] dark:via-[#1B2A4A] dark:to-[#0A0F1A]">
         <div className="mx-auto max-w-7xl px-4 pb-20 pt-16 sm:px-6 lg:px-8">
           <div className="text-center animate-fade-in">
-            <Badge variant="info" className="mb-4">University of Bamenda</Badge>
-            <h1 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-5xl lg:text-6xl">
+            <Badge variant="gold" className="mb-4">University of Bamenda</Badge>
+            <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
               Find Your Perfect
-              <span className="block text-blue-600 dark:text-blue-400">Academic Programme</span>
+              <span className="block text-[#0FA3B1]">Academic Programme</span>
             </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-zinc-600 dark:text-zinc-400">
+            <p className="mx-auto mt-4 max-w-2xl text-lg text-zinc-300 dark:text-zinc-400">
               Discover programmes that match your qualifications. Get instant eligibility checks, 
               AI-powered recommendations, and personal guidance for your academic journey at UBa.
             </p>
@@ -87,9 +87,9 @@ export default function Home() {
                   placeholder="Search programmes, subjects, or careers..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-xl border border-zinc-200 bg-white/90 py-4 pl-12 pr-36 text-base shadow-lg backdrop-blur-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-900/90 dark:text-zinc-50"
+                  className="w-full rounded-xl border border-zinc-600 bg-white/10 py-4 pl-12 pr-36 text-base text-white shadow-lg backdrop-blur-sm placeholder:text-zinc-400 focus:border-[#0FA3B1] focus:outline-none focus:ring-2 focus:ring-[#0FA3B1]/30 dark:border-zinc-700 dark:bg-zinc-900/90 dark:text-zinc-50"
                 />
-                <Button type="submit" size="lg" className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-500">
+                <Button type="submit" size="lg" className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#0FA3B1] hover:bg-[#0C8793] text-white">
                   Search <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -137,10 +137,10 @@ export default function Home() {
               { icon: Users, label: "Students Guided", value: "5,000+" },
               { icon: Award, label: "Degree Types", value: "10+" },
             ].map((stat) => (
-              <div key={stat.label} className="rounded-xl border border-zinc-200 bg-white/60 p-4 text-center backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/60">
-                <stat.icon className="mx-auto h-6 w-6 text-blue-600 dark:text-blue-400" />
-                <p className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">{stat.value}</p>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">{stat.label}</p>
+              <div key={stat.label} className="rounded-xl border border-zinc-700/30 bg-white/10 p-4 text-center backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/60">
+                <stat.icon className="mx-auto h-6 w-6 text-[#0FA3B1]" />
+                <p className="mt-2 text-2xl font-bold text-white">{stat.value}</p>
+                <p className="text-sm text-zinc-400">{stat.label}</p>
               </div>
             ))}
           </div>
@@ -246,17 +246,17 @@ export default function Home() {
       </section>
 
       {/* CTA */}
-      <section className="bg-gradient-to-r from-blue-600 to-indigo-600 py-16 dark:from-blue-800 dark:to-indigo-800">
+      <section className="bg-gradient-to-r from-[#1B2A4A] to-[#2A3F66] py-16 dark:from-[#0A0F1A] dark:to-[#1B2A4A]">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-          <Sparkles className="mx-auto h-10 w-10 text-blue-200" />
+          <Sparkles className="mx-auto h-10 w-10 text-[#0FA3B1]" />
           <h2 className="mt-4 text-3xl font-bold text-white">Ready to Find Your Programme?</h2>
-          <p className="mt-2 text-lg text-blue-100">Check your eligibility in seconds with our intelligent admission advisor.</p>
+          <p className="mt-2 text-lg text-zinc-300">Check your eligibility in seconds with our intelligent admission advisor.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Link href="/admission-checker">
-              <Button size="lg" className="bg-white text-blue-700 hover:bg-blue-50">Check Eligibility</Button>
+              <Button size="lg" className="bg-[#0FA3B1] text-white hover:bg-[#0C8793]">Check Eligibility</Button>
             </Link>
             <Link href="/ai-advisor">
-              <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10">Ask AI Advisor</Button>
+              <Button size="lg" variant="outline" className="border-[#0FA3B1]/50 text-white hover:bg-white/10">Ask AI Advisor</Button>
             </Link>
           </div>
         </div>

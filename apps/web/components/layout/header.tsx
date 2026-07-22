@@ -35,7 +35,7 @@ export function Header() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#1B2A4A] dark:bg-[#2A3F66]">
             <GraduationCap className="h-5 w-5 text-white" />
           </div>
           <div className="hidden sm:block">
@@ -121,7 +121,7 @@ export function Header() {
                   placeholder="Search programmes, faculties, subjects..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-200 bg-white py-2 pl-10 pr-4 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                  className="w-full rounded-lg border border-zinc-200 bg-white py-2 pl-10 pr-4 text-sm focus:border-[#1B2A4A] focus:outline-none focus:ring-1 focus:ring-[#1B2A4A]/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
                   autoFocus
                 />
               </div>

@@ -101,7 +101,7 @@ export default function FavouritesPage() {
                     <GraduationCap className="h-6 w-6 text-red-500" />
                   </div>
                   <div>
-                    <Link href={`/programmes/${prog.code}`} className="font-semibold text-zinc-900 hover:text-blue-600 dark:text-zinc-50 dark:hover:text-blue-400">
+                    <Link href={`/programmes/${prog.code}`} className="font-semibold text-zinc-900 hover:text-[#0FA3B1] dark:text-zinc-50 dark:hover:text-[#0FA3B1]">
                       {prog.name}
                     </Link>
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-zinc-500">

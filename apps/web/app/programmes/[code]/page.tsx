@@ -174,7 +174,7 @@ export default function ProgrammeDetailPage() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`pb-3 text-sm font-medium transition-colors ${
                     activeTab === tab.id
-                      ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
+                      ? "border-b-2 border-[#0FA3B1] text-[#0FA3B1] dark:text-[#1DC4D4]"
                       : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
                   }`}
                 >

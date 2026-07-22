@@ -48,7 +48,7 @@ export default function LoginPage() {
     <div className="mx-auto flex min-h-[80vh] max-w-md items-center px-4 py-12">
       <Card className="w-full">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-600">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#1B2A4A]">
             <GraduationCap className="h-6 w-6 text-white" />
           </div>
           <CardTitle className="text-2xl">Welcome back</CardTitle>
@@ -67,7 +67,7 @@ export default function LoginPage() {
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-200 bg-white py-2.5 pl-10 pr-4 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                  className="w-full rounded-lg border border-zinc-200 bg-white py-2.5 pl-10 pr-4 text-sm focus:border-[#0FA3B1] focus:outline-none focus:ring-1 focus:ring-[#0FA3B1]/30 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
                   required
                 />
               </div>
@@ -83,7 +83,7 @@ export default function LoginPage() {
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-200 bg-white py-2.5 pl-10 pr-10 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                  className="w-full rounded-lg border border-zinc-200 bg-white py-2.5 pl-10 pr-10 text-sm focus:border-[#0FA3B1] focus:outline-none focus:ring-1 focus:ring-[#0FA3B1]/30 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
                   required
                 />
                 <button
@@ -97,10 +97,10 @@ export default function LoginPage() {
             </div>
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2">
-                <input type="checkbox" className="rounded border-zinc-300 text-blue-600" />
+                <input type="checkbox" className="rounded border-zinc-300 text-[#0FA3B1]" />
                 <span className="text-sm text-zinc-600 dark:text-zinc-400">Remember me</span>
               </label>
-              <a href="#" className="text-sm text-blue-600 hover:text-blue-500">Forgot password?</a>
+              <a href="#" className="text-sm text-[#0FA3B1] hover:text-[#0C8793]">Forgot password?</a>
             </div>
             <Button type="submit" variant="primary" className="w-full" disabled={login.isPending}>
               {login.isPending ? "Signing in..." : "Sign in"}
@@ -108,7 +108,7 @@ export default function LoginPage() {
           </form>
           <p className="mt-6 text-center text-sm text-zinc-500">
             Don&apos;t have an account?{" "}
-            <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
+            <Link href="/register" className="font-medium text-[#0FA3B1] hover:text-[#0C8793]">
               Create one here
             </Link>
           </p>

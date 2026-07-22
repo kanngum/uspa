@@ -5,7 +5,7 @@ import {
   IsEnum,
 } from 'class-validator';
 
-import { AcademicUnitType } from '../../../generated/prisma';
+import { AcademicUnitType } from '@prisma/client';
 
 export class CreateAcademicUnitDto {
   @IsString()

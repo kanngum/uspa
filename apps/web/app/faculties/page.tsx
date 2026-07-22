@@ -76,15 +76,15 @@ export default function FacultiesPage() {
               <CardContent className="p-0">
                 <div className="grid md:grid-cols-3">
                   {/* Faculty Header */}
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 dark:from-zinc-800 dark:to-zinc-800/50">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-600">
+                  <div className="bg-gradient-to-br from-[#1B2A4A] to-[#2A3F66] p-6 dark:from-[#0A0F1A] dark:to-[#1B2A4A]">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#0FA3B1]">
                       <Building2 className="h-6 w-6 text-white" />
                     </div>
-                    <h2 className="mt-4 text-xl font-bold text-zinc-900 dark:text-zinc-50">{faculty.name}</h2>
-                    <Badge variant="info" className="mt-2">{faculty.abb}</Badge>
-                    <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">{faculty.description}</p>
+                    <h2 className="mt-4 text-xl font-bold text-white">{faculty.name}</h2>
+<Badge variant="info" className="mt-2">{faculty.abb}</Badge>
+                    <p className="mt-3 text-sm text-zinc-300">{faculty.description}</p>
                     <Link href={`/faculties/${faculty.abb.toLowerCase()}`}>
-                      <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400">
+                      <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-[#0FA3B1] hover:text-[#0C8793]">
                         View all programmes <ChevronRight className="h-4 w-4" />
                       </span>
                     </Link>

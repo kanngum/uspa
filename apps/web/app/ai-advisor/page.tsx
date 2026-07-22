@@ -79,8 +79,8 @@ export default function AiAdvisorPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-8 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30">
-          <Sparkles className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#1B2A4A]">
+          <Sparkles className="h-6 w-6 text-[#0FA3B1]" />
         </div>
         <h1 className="mt-4 text-3xl font-bold text-zinc-900 dark:text-zinc-50">AI Programme Advisor</h1>
         <p className="mt-2 text-zinc-600 dark:text-zinc-400">

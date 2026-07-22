@@ -1,15 +1,111 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-//////////////////////////////////////////////////
-// ENUMS
-//////////////////////////////////////////////////
+model University {
+  id            String         @id @default(cuid())
+  name          String
+  abbreviation  String         @unique
+  website       String?
+  description   String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  academicUnits AcademicUnit[]
+}
+
+model AcademicUnit {
+  id           String           @id @default(cuid())
+  universityId String
+  name         String
+  abbreviation String?
+  type         AcademicUnitType
+  description  String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  university   University       @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  departments  Department[]
+
+  @@unique([universityId, name])
+}
+
+model Department {
+  id             String       @id @default(cuid())
+  academicUnitId String
+  name           String
+  abbreviation   String?
+  description    String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  academicUnit   AcademicUnit @relation(fields: [academicUnitId], references: [id], onDelete: Cascade)
+  programmes     Programme[]
+
+  @@unique([academicUnitId, name])
+}
+
+model Programme {
+  id           String                 @id @default(cuid())
+  departmentId String
+  code         String                 @unique
+  name         String
+  degree       DegreeType
+  level        ProgrammeLevel
+  duration     Int
+  description  String?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  department   Department             @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  requirements ProgrammeRequirement[]
+  tuition      Tuition[]
+
+  @@index([name])
+}
+
+model Tuition {
+  id           String    @id @default(cuid())
+  programmeId  String
+  academicYear String
+  amount       Decimal   @db.Decimal(12, 2)
+  currency     String    @default("XAF")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  programme    Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+
+  @@unique([programmeId, academicYear])
+}
+
+model Subject {
+  id           String                 @id @default(cuid())
+  name         String                 @unique
+  level        SubjectLevel
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  requirements ProgrammeRequirement[]
+}
+
+model ProgrammeRequirement {
+  id              String          @id @default(cuid())
+  programmeId     String
+  subjectId       String
+  requirementType RequirementType
+  minimumGrade    String?
+  programme       Programme       @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  subject         Subject         @relation(fields: [subjectId], references: [id])
+
+  @@unique([programmeId, subjectId])
+}
+
+model GeneralAdmissionRule {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
 
 enum AcademicUnitType {
   FACULTY
@@ -30,9 +126,6 @@ enum DegreeType {
   MA
   MENG
   PHD
-  CERTIFICATE
-  BTECH
-  HPD
 }
 
 enum ProgrammeLevel {
@@ -51,285 +144,3 @@ enum RequirementType {
   REQUIRED
   OPTIONAL
 }
-
-enum UserRole {
-  VISITOR
-  STUDENT
-  ADMIN
-}
-
-enum EligibilityStatus {
-  ELIGIBLE
-  CONDITIONALLY_ELIGIBLE
-  NOT_ELIGIBLE
-}
-
-//////////////////////////////////////////////////
-// UNIVERSITY
-//////////////////////////////////////////////////
-
-model University {
-  id           String  @id @default(cuid())
-  name         String
-  abbreviation String  @unique
-  website      String?
-  description  String?
-  email        String?
-  phone        String?
-  address      String?
-  logo         String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  academicUnits AcademicUnit[]
-}
-
-//////////////////////////////////////////////////
-// FACULTIES / SCHOOLS
-//////////////////////////////////////////////////
-
-model AcademicUnit {
-  id            String @id @default(cuid())
-  universityId  String
-  name          String
-  abbreviation  String?
-  type          AcademicUnitType
-  description   String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  university   University   @relation(fields: [universityId], references: [id], onDelete: Cascade)
-  departments  Department[]
-
-  @@unique([universityId, name])
-}
-
-//////////////////////////////////////////////////
-// DEPARTMENTS
-//////////////////////////////////////////////////
-
-model Department {
-  id             String @id @default(cuid())
-  academicUnitId String
-  name           String
-  abbreviation   String?
-  description    String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  academicUnit AcademicUnit @relation(fields: [academicUnitId], references: [id], onDelete: Cascade)
-  programmes   Programme[]
-
-  @@unique([academicUnitId, name])
-}
-
-//////////////////////////////////////////////////
-// PROGRAMMES
-//////////////////////////////////////////////////
-
-model Programme {
-  id           String @id @default(cuid())
-  departmentId String
-  code         String @unique
-  name         String
-  degree       DegreeType
-  level        ProgrammeLevel
-  duration     Int
-  description  String?
-  isActive     Boolean @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-
-  tuition      Tuition[]
-  requirements ProgrammeRequirement[]
-  careers      ProgrammeCareer[]
-  keywords     ProgrammeKeyword[]
-  announcements Announcement[]
-  savedBy      SavedProgramme[]
-}
-
-//////////////////////////////////////////////////
-// TUITION
-//////////////////////////////////////////////////
-
-model Tuition {
-  id           String @id @default(cuid())
-  programmeId  String
-  academicYear String
-  amount       Decimal @db.Decimal(12, 2)
-  currency     String @default("XAF")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  programme Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
-
-  @@unique([programmeId, academicYear])
-}
-
-//////////////////////////////////////////////////
-// SUBJECTS
-//////////////////////////////////////////////////
-
-model Subject {
-  id   String @id @default(cuid())
-  name String @unique
-  code String?
-
-  level SubjectLevel
-
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  requirements ProgrammeRequirement[]
-}
-
-//////////////////////////////////////////////////
-// REQUIREMENTS
-//////////////////////////////////////////////////
-
-model ProgrammeRequirement {
-  id             String          @id @default(cuid())
-  programmeId    String
-  subjectId      String
-  requirementType RequirementType @default(REQUIRED)
-  minimumGrade   String?
-
-  programme Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
-  subject   Subject   @relation(fields: [subjectId], references: [id])
-
-  @@unique([programmeId, subjectId])
-}
-
-//////////////////////////////////////////////////
-// GENERAL ADMISSION RULES
-//////////////////////////////////////////////////
-
-model GeneralAdmissionRule {
-  id          String  @id @default(cuid())
-  title       String
-  description String
-  isActive    Boolean @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-//////////////////////////////////////////////////
-// CAREERS
-//////////////////////////////////////////////////
-
-model Career {
-  id   String @id @default(cuid())
-  name String @unique
-  description String?
-
-  programmes ProgrammeCareer[]
-}
-
-model ProgrammeCareer {
-  programmeId String
-  careerId    String
-
-  programme Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
-  career    Career    @relation(fields: [careerId], references: [id])
-
-  @@id([programmeId, careerId])
-}
-
-//////////////////////////////////////////////////
-// KEYWORDS
-//////////////////////////////////////////////////
-
-model Keyword {
-  id   String @id @default(cuid())
-  word String @unique
-
-  programmes ProgrammeKeyword[]
-}
-
-model ProgrammeKeyword {
-  programmeId String
-  keywordId   String
-
-  programme Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
-  keyword   Keyword   @relation(fields: [keywordId], references: [id])
-
-  @@id([programmeId, keywordId])
-}
-
-//////////////////////////////////////////////////
-// USERS
-//////////////////////////////////////////////////
-
-model User {
-  id           String   @id @default(cuid())
-  firstName    String
-  lastName     String
-  email        String   @unique
-  passwordHash String
-  role         UserRole @default(VISITOR)
-  isActive     Boolean  @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  savedProgrammes SavedProgramme[]
-  searchHistory   SearchHistory[]
-  announcements   Announcement[]
-}
-
-//////////////////////////////////////////////////
-// SAVED PROGRAMMES
-//////////////////////////////////////////////////
-
-model SavedProgramme {
-  id          String   @id @default(cuid())
-  userId      String
-  programmeId String
-  createdAt   DateTime @default(now())
-
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  programme Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, programmeId])
-}
-
-//////////////////////////////////////////////////
-// SEARCH HISTORY
-//////////////////////////////////////////////////
-
-model SearchHistory {
-  id        String   @id @default(cuid())
-  userId    String
-  query     String
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-//////////////////////////////////////////////////
-// ANNOUNCEMENTS
-//////////////////////////////////////////////////
-
-model Announcement {
-  id         String @id @default(cuid())
-  title      String
-  content    String
-  programmeId String?
-  authorId   String
-  published Boolean @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  programme Programme? @relation(fields: [programmeId], references: [id])
-  author    User       @relation(fields: [authorId], references: [id])
-}
-
