@@ -228,16 +228,379 @@ class ApiClient {
     return this.request<{ success: boolean; data: any }>('/admin/dashboard/stats');
   }
 
-  async getAdminProgrammes(page = 1, limit = 20) {
+  async getAdminProgrammes(page = 1, limit = 20, search?: string, facultyId?: string) {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (search) params.set('search', search);
+    if (facultyId) params.set('facultyId', facultyId);
     return this.request<{ success: boolean; data: any[]; total: number; page: number; limit: number; totalPages: number }>(
-      `/admin/programmes?page=${page}&limit=${limit}`,
+      `/admin/programmes?${params.toString()}`,
     );
   }
 
-  async getAdminUsers(page = 1, limit = 20) {
+  async createAdminProgramme(input: any) {
+    return this.request<{ success: boolean; data: any }>('/admin/programmes', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async updateAdminProgramme(id: string, input: any) {
+    return this.request<{ success: boolean; data: any }>(`/admin/programmes/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async deleteAdminProgramme(id: string) {
+    return this.request<{ success: boolean; data: any }>(`/admin/programmes/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getAdminUsers(page = 1, limit = 20, search?: string) {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (search) params.set('search', search);
     return this.request<{ success: boolean; data: any[]; total: number; page: number; limit: number; totalPages: number }>(
-      `/admin/users?page=${page}&limit=${limit}`,
+      `/admin/users?${params.toString()}`,
     );
+  }
+
+  async updateUserRole(id: string, role: string) {
+    return this.request<{ success: boolean; data: any }>(`/admin/users/${id}/role`, {
+      method: 'PATCH',
+      body: JSON.stringify({ role }),
+    });
+  }
+
+  async toggleUserActive(id: string) {
+    return this.request<{ success: boolean; data: any }>(`/admin/users/${id}/toggle-active`, {
+      method: 'PATCH',
+    });
+  }
+
+  // Admin - Subjects
+  async getAdminSubjects(page = 1, limit = 50, search?: string, level?: string) {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (search) params.set('search', search);
+    if (level) params.set('level', level);
+    return this.request<{ success: boolean; data: any[]; total: number; page: number; limit: number; totalPages: number }>(
+      `/admin/subjects?${params.toString()}`,
+    );
+  }
+
+  async createAdminSubject(input: { name: string; code?: string; level: string }) {
+    return this.request<{ success: boolean; data: any }>('/admin/subjects', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async updateAdminSubject(id: string, input: any) {
+    return this.request<{ success: boolean; data: any }>(`/admin/subjects/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async deleteAdminSubject(id: string) {
+    return this.request<{ success: boolean; data: any }>(`/admin/subjects/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Admin - Faculties
+  async createAdminFaculty(input: any) {
+    return this.request<{ success: boolean; data: any }>('/admin/faculties', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async updateAdminFaculty(id: string, input: any) {
+    return this.request<{ success: boolean; data: any }>(`/admin/faculties/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async deleteAdminFaculty(id: string) {
+    return this.request<{ success: boolean; data: any }>(`/admin/faculties/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Admin - Departments
+  async createAdminDepartment(input: any) {
+    return this.request<{ success: boolean; data: any }>('/admin/departments', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async updateAdminDepartment(id: string, input: any) {
+    return this.request<{ success: boolean; data: any }>(`/admin/departments/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async deleteAdminDepartment(id: string) {
+    return this.request<{ success: boolean; data: any }>(`/admin/departments/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Admin - Tuition
+  async getAdminTuition(page = 1, limit = 50, programmeId?: string) {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (programmeId) params.set('programmeId', programmeId);
+    return this.request<{ success: boolean; data: any[]; total: number; page: number; limit: number; totalPages: number }>(
+      `/admin/tuition?${params.toString()}`,
+    );
+  }
+
+  async createAdminTuition(input: { programmeId: string; academicYear: string; amount: number; currency?: string }) {
+    return this.request<{ success: boolean; data: any }>('/admin/tuition', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async updateAdminTuition(id: string, input: any) {
+    return this.request<{ success: boolean; data: any }>(`/admin/tuition/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async deleteAdminTuition(id: string) {
+    return this.request<{ success: boolean; data: any }>(`/admin/tuition/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Admin - Careers
+  async getAdminCareers(page = 1, limit = 50, search?: string) {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (search) params.set('search', search);
+    return this.request<{ success: boolean; data: any[]; total: number; page: number; limit: number; totalPages: number }>(
+      `/admin/careers?${params.toString()}`,
+    );
+  }
+
+  async createAdminCareer(input: { name: string; description?: string }) {
+    return this.request<{ success: boolean; data: any }>('/admin/careers', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async updateAdminCareer(id: string, input: any) {
+    return this.request<{ success: boolean; data: any }>(`/admin/careers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async deleteAdminCareer(id: string) {
+    return this.request<{ success: boolean; data: any }>(`/admin/careers/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Admin - Keywords
+  async getAdminKeywords(page = 1, limit = 50, search?: string) {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (search) params.set('search', search);
+    return this.request<{ success: boolean; data: any[]; total: number; page: number; limit: number; totalPages: number }>(
+      `/admin/keywords?${params.toString()}`,
+    );
+  }
+
+  async createAdminKeyword(input: { word: string }) {
+    return this.request<{ success: boolean; data: any }>('/admin/keywords', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async updateAdminKeyword(id: string, input: any) {
+    return this.request<{ success: boolean; data: any }>(`/admin/keywords/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async deleteAdminKeyword(id: string) {
+    return this.request<{ success: boolean; data: any }>(`/admin/keywords/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Admin - Admission Rules
+  async getAdminAdmissionRules(page = 1, limit = 50) {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    return this.request<{ success: boolean; data: any[]; total: number; page: number; limit: number; totalPages: number }>(
+      `/admin/admission-rules?${params.toString()}`,
+    );
+  }
+
+  async createAdminAdmissionRule(input: { title: string; description: string; isActive?: boolean }) {
+    return this.request<{ success: boolean; data: any }>('/admin/admission-rules', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async updateAdminAdmissionRule(id: string, input: any) {
+    return this.request<{ success: boolean; data: any }>(`/admin/admission-rules/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async deleteAdminAdmissionRule(id: string) {
+    return this.request<{ success: boolean; data: any }>(`/admin/admission-rules/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Admin - Announcements
+  async createAdminAnnouncement(input: { title: string; content: string }) {
+    return this.request<{ success: boolean; data: any }>('/admin/announcements', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async getAdminAnnouncements(published?: boolean) {
+    const params = published !== undefined ? `?published=${published}` : '';
+    return this.request<{ success: boolean; data: any[] }>(`/admin/announcements${params}`);
+  }
+
+  async toggleAdminAnnouncement(id: string) {
+    return this.request<{ success: boolean; data: any }>(`/admin/announcements/${id}/toggle`, {
+      method: 'PATCH',
+    });
+  }
+
+  async deleteAdminAnnouncement(id: string) {
+    return this.request<{ success: boolean; data: any }>(`/admin/announcements/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Admin - Duplicates
+  async getDuplicateFaculties() {
+    return this.request<{ success: boolean; data: any[] }>('/admin/duplicates/faculties');
+  }
+
+  async getDuplicateProgrammes() {
+    return this.request<{ success: boolean; data: any[] }>('/admin/duplicates/programmes');
+  }
+
+  async getDuplicateSubjects() {
+    return this.request<{ success: boolean; data: any[] }>('/admin/duplicates/subjects');
+  }
+
+  // Admin - Import
+  async importValidate(type: string, data: any[]) {
+    return this.request<{ success: boolean; data: any }>('/import/validate', {
+      method: 'POST',
+      body: JSON.stringify({ type, data }),
+    });
+  }
+
+  async importPreview(type: string, data: any[]) {
+    return this.request<{ success: boolean; data: any }>('/import/preview', {
+      method: 'POST',
+      body: JSON.stringify({ type, data }),
+    });
+  }
+
+  async importConfirm(type: string, data: any[]) {
+    return this.request<{ success: boolean; data: any }>('/import/confirm', {
+      method: 'POST',
+      body: JSON.stringify({ type, data }),
+    });
+  }
+
+  // Admin - Programme Careers/Keywords associations
+  async addProgrammeCareer(programmeId: string, careerId: string) {
+    return this.request<{ success: boolean; data: any }>(`/admin/programmes/${programmeId}/careers`, {
+      method: 'POST',
+      body: JSON.stringify({ careerId }),
+    });
+  }
+
+  async removeProgrammeCareer(programmeId: string, careerId: string) {
+    return this.request<{ success: boolean; data: any }>(`/admin/programmes/${programmeId}/careers/${careerId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async addProgrammeKeyword(programmeId: string, keywordId: string) {
+    return this.request<{ success: boolean; data: any }>(`/admin/programmes/${programmeId}/keywords`, {
+      method: 'POST',
+      body: JSON.stringify({ keywordId }),
+    });
+  }
+
+  async removeProgrammeKeyword(programmeId: string, keywordId: string) {
+    return this.request<{ success: boolean; data: any }>(`/admin/programmes/${programmeId}/keywords/${keywordId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Admin - Programme Requirements
+  async getProgrammeRequirements(programmeId: string) {
+    return this.request<{ success: boolean; data: { programme: any; requirements: any[]; total: number } }>(
+      `/programmes/${programmeId}/requirements`,
+    );
+  }
+
+  async createProgrammeRequirement(programmeId: string, input: { subjectId: string; requirementType?: string; minimumGrade?: string }) {
+    return this.request<{ success: boolean; data: any }>(`/programmes/${programmeId}/requirements`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async updateRequirement(id: string, input: { requirementType?: string; minimumGrade?: string }) {
+    return this.request<{ success: boolean; data: any }>(`/requirements/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async deleteRequirement(id: string) {
+    return this.request<{ success: boolean; data: any }>(`/requirements/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async bulkAddRequirements(programmeId: string, inputs: Array<{ subjectId: string; requirementType?: string; minimumGrade?: string }>) {
+    return this.request<{ success: boolean; data: { created: any[]; errors: any[] } }>(`/programmes/${programmeId}/requirements/bulk`, {
+      method: 'POST',
+      body: JSON.stringify(inputs),
+    });
+  }
+
+  // Admin - Dashboard
+  async getProgrammesByFaculty() {
+    return this.request<{ success: boolean; data: any[] }>('/admin/dashboard/programmes-by-faculty');
+  }
+
+  async getPopularSearches(limit = 10) {
+    return this.request<{ success: boolean; data: any[] }>(`/admin/dashboard/popular-searches?limit=${limit}`);
+  }
+
+  async getRecentSearches(limit = 20) {
+    return this.request<{ success: boolean; data: any[] }>(`/admin/dashboard/recent-searches?limit=${limit}`);
+  }
+
+  async getUserStats() {
+    return this.request<{ success: boolean; data: any }>('/admin/dashboard/user-stats');
   }
 }
 

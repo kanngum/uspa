@@ -64,10 +64,14 @@ export class AdminController {
   async getAllProgrammes(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('facultyId') facultyId?: string,
   ) {
     const data = await this.adminService.getAllProgrammes(
       page ? parseInt(page, 10) : 1,
       limit ? parseInt(limit, 10) : 20,
+      search,
+      facultyId,
     );
     return { success: true, ...data };
   }
@@ -84,16 +88,62 @@ export class AdminController {
     return { success: true, data: result };
   }
 
+  @Post('programmes')
+  async createProgramme(@Body() input: any) {
+    const programme = await this.adminService.createProgramme(input);
+    return { success: true, data: programme };
+  }
+
+  // ==================== PROGRAMME CAREER/KEYWORD ASSOCIATIONS ====================
+
+  @Post('programmes/:id/careers')
+  async addProgrammeCareer(
+    @Param('id') id: string,
+    @Body() input: { careerId: string },
+  ) {
+    const result = await this.adminService.addProgrammeCareer(id, input.careerId);
+    return { success: true, data: result };
+  }
+
+  @Delete('programmes/:id/careers/:careerId')
+  async removeProgrammeCareer(
+    @Param('id') id: string,
+    @Param('careerId') careerId: string,
+  ) {
+    const result = await this.adminService.removeProgrammeCareer(id, careerId);
+    return { success: true, data: result };
+  }
+
+  @Post('programmes/:id/keywords')
+  async addProgrammeKeyword(
+    @Param('id') id: string,
+    @Body() input: { keywordId: string },
+  ) {
+    const result = await this.adminService.addProgrammeKeyword(id, input.keywordId);
+    return { success: true, data: result };
+  }
+
+  @Delete('programmes/:id/keywords/:keywordId')
+  async removeProgrammeKeyword(
+    @Param('id') id: string,
+    @Param('keywordId') keywordId: string,
+  ) {
+    const result = await this.adminService.removeProgrammeKeyword(id, keywordId);
+    return { success: true, data: result };
+  }
+
   // ==================== USER MANAGEMENT ====================
 
   @Get('users')
   async getAllUsers(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('search') search?: string,
   ) {
     const data = await this.adminService.getAllUsers(
       page ? parseInt(page, 10) : 1,
       limit ? parseInt(limit, 10) : 20,
+      search,
     );
     return { success: true, ...data };
   }
@@ -111,14 +161,6 @@ export class AdminController {
   async toggleUserActive(@Param('id') id: string) {
     const user = await this.adminService.toggleUserActive(id);
     return { success: true, data: user };
-  }
-
-  // ==================== CREATE PROGRAMME ====================
-
-  @Post('programmes')
-  async createProgramme(@Body() input: any) {
-    const programme = await this.adminService.createProgramme(input);
-    return { success: true, data: programme };
   }
 
   // ==================== SUBJECT MANAGEMENT ====================
@@ -176,6 +218,12 @@ export class AdminController {
     return { success: true, data: faculty };
   }
 
+  @Delete('faculties/:id')
+  async deleteFaculty(@Param('id') id: string) {
+    const result = await this.adminService.deleteFaculty(id);
+    return { success: true, data: result };
+  }
+
   @Post('departments')
   async createDepartment(@Body() input: any) {
     const department = await this.adminService.createDepartment(input);
@@ -188,11 +236,194 @@ export class AdminController {
     return { success: true, data: department };
   }
 
+  @Delete('departments/:id')
+  async deleteDepartment(@Param('id') id: string) {
+    const result = await this.adminService.deleteDepartment(id);
+    return { success: true, data: result };
+  }
+
+  // ==================== TUITION MANAGEMENT ====================
+
+  @Get('tuition')
+  async getAllTuition(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('programmeId') programmeId?: string,
+  ) {
+    const data = await this.adminService.getAllTuition(
+      page ? parseInt(page, 10) : 1,
+      limit ? parseInt(limit, 10) : 50,
+      programmeId,
+    );
+    return { success: true, ...data };
+  }
+
+  @Post('tuition')
+  async createTuition(
+    @Body() input: {
+      programmeId: string;
+      academicYear: string;
+      amount: number;
+      currency?: string;
+    },
+  ) {
+    const tuition = await this.adminService.createTuition(input);
+    return { success: true, data: tuition };
+  }
+
+  @Put('tuition/:id')
+  async updateTuition(
+    @Param('id') id: string,
+    @Body() input: { academicYear?: string; amount?: number; currency?: string },
+  ) {
+    const tuition = await this.adminService.updateTuition(id, input);
+    return { success: true, data: tuition };
+  }
+
+  @Delete('tuition/:id')
+  async deleteTuition(@Param('id') id: string) {
+    const result = await this.adminService.deleteTuition(id);
+    return { success: true, data: result };
+  }
+
+  // ==================== CAREER MANAGEMENT ====================
+
+  @Get('careers')
+  async getAllCareers(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+  ) {
+    const data = await this.adminService.getAllCareers(
+      page ? parseInt(page, 10) : 1,
+      limit ? parseInt(limit, 10) : 50,
+      search,
+    );
+    return { success: true, ...data };
+  }
+
+  @Post('careers')
+  async createCareer(
+    @Body() input: { name: string; description?: string },
+  ) {
+    const career = await this.adminService.createCareer(input);
+    return { success: true, data: career };
+  }
+
+  @Put('careers/:id')
+  async updateCareer(
+    @Param('id') id: string,
+    @Body() input: { name?: string; description?: string },
+  ) {
+    const career = await this.adminService.updateCareer(id, input);
+    return { success: true, data: career };
+  }
+
+  @Delete('careers/:id')
+  async deleteCareer(@Param('id') id: string) {
+    const result = await this.adminService.deleteCareer(id);
+    return { success: true, data: result };
+  }
+
+  // ==================== KEYWORD MANAGEMENT ====================
+
+  @Get('keywords')
+  async getAllKeywords(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+  ) {
+    const data = await this.adminService.getAllKeywords(
+      page ? parseInt(page, 10) : 1,
+      limit ? parseInt(limit, 10) : 50,
+      search,
+    );
+    return { success: true, ...data };
+  }
+
+  @Post('keywords')
+  async createKeyword(@Body() input: { word: string }) {
+    const keyword = await this.adminService.createKeyword(input);
+    return { success: true, data: keyword };
+  }
+
+  @Put('keywords/:id')
+  async updateKeyword(
+    @Param('id') id: string,
+    @Body() input: { word?: string },
+  ) {
+    const keyword = await this.adminService.updateKeyword(id, input);
+    return { success: true, data: keyword };
+  }
+
+  @Delete('keywords/:id')
+  async deleteKeyword(@Param('id') id: string) {
+    const result = await this.adminService.deleteKeyword(id);
+    return { success: true, data: result };
+  }
+
+  // ==================== ADMISSION RULES MANAGEMENT ====================
+
+  @Get('admission-rules')
+  async getAllAdmissionRules(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const data = await this.adminService.getAllAdmissionRules(
+      page ? parseInt(page, 10) : 1,
+      limit ? parseInt(limit, 10) : 50,
+    );
+    return { success: true, ...data };
+  }
+
+  @Post('admission-rules')
+  async createAdmissionRule(
+    @Body() input: { title: string; description: string; isActive?: boolean },
+  ) {
+    const rule = await this.adminService.createAdmissionRule(input);
+    return { success: true, data: rule };
+  }
+
+  @Put('admission-rules/:id')
+  async updateAdmissionRule(
+    @Param('id') id: string,
+    @Body() input: { title?: string; description?: string; isActive?: boolean },
+  ) {
+    const rule = await this.adminService.updateAdmissionRule(id, input);
+    return { success: true, data: rule };
+  }
+
+  @Delete('admission-rules/:id')
+  async deleteAdmissionRule(@Param('id') id: string) {
+    const result = await this.adminService.deleteAdmissionRule(id);
+    return { success: true, data: result };
+  }
+
+  // ==================== DUPLICATE DETECTION ====================
+
+  @Get('duplicates/faculties')
+  async detectDuplicateFaculties() {
+    const result = await this.adminService.detectDuplicateFaculties();
+    return { success: true, data: result };
+  }
+
+  @Get('duplicates/programmes')
+  async detectDuplicateProgrammes() {
+    const result = await this.adminService.detectDuplicateProgrammes();
+    return { success: true, data: result };
+  }
+
+  @Get('duplicates/subjects')
+  async detectDuplicateSubjects() {
+    const result = await this.adminService.detectDuplicateSubjects();
+    return { success: true, data: result };
+  }
+
   // ==================== ANNOUNCEMENTS ====================
 
   @Post('announcements')
   async createAnnouncement(
-    @Body() input: { title: string; content: string },
+    @Body() input: { title: string; content: string; programmeId?: string },
     @Request() req: any,
   ) {
     const announcement = await this.adminService.createAnnouncement({

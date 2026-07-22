@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -100,11 +100,24 @@ export class AdminService {
 
   // ==================== PROGRAMME MANAGEMENT ====================
 
-  async getAllProgrammes(page: number = 1, limit: number = 20) {
+  async getAllProgrammes(page: number = 1, limit: number = 20, search?: string, facultyId?: string) {
     const skip = (page - 1) * limit;
+    const where: any = {};
+
+    if (search?.trim()) {
+      where.OR = [
+        { name: { contains: search.trim(), mode: 'insensitive' } },
+        { code: { contains: search.trim(), mode: 'insensitive' } },
+      ];
+    }
+
+    if (facultyId) {
+      where.department = { academicUnitId: facultyId };
+    }
 
     const [data, total] = await Promise.all([
       this.prisma.programme.findMany({
+        where,
         skip,
         take: limit,
         include: {
@@ -125,7 +138,7 @@ export class AdminService {
         },
         orderBy: { name: 'asc' },
       }),
-      this.prisma.programme.count(),
+      this.prisma.programme.count({ where }),
     ]);
 
     return {
@@ -148,6 +161,7 @@ export class AdminService {
         duration: input.duration,
         description: input.description,
         departmentId: input.departmentId,
+        isActive: input.isActive,
       },
       include: {
         department: {
@@ -168,13 +182,53 @@ export class AdminService {
     return { message: 'Programme deleted successfully' };
   }
 
+  // ==================== PROGRAMME CAREER/KEYWORD ASSOCIATIONS ====================
+
+  async addProgrammeCareer(programmeId: string, careerId: string) {
+    return this.prisma.programmeCareer.create({
+      data: { programmeId, careerId },
+      include: { career: true },
+    });
+  }
+
+  async removeProgrammeCareer(programmeId: string, careerId: string) {
+    await this.prisma.programmeCareer.delete({
+      where: { programmeId_careerId: { programmeId, careerId } },
+    });
+    return { message: 'Career removed from programme' };
+  }
+
+  async addProgrammeKeyword(programmeId: string, keywordId: string) {
+    return this.prisma.programmeKeyword.create({
+      data: { programmeId, keywordId },
+      include: { keyword: true },
+    });
+  }
+
+  async removeProgrammeKeyword(programmeId: string, keywordId: string) {
+    await this.prisma.programmeKeyword.delete({
+      where: { programmeId_keywordId: { programmeId, keywordId } },
+    });
+    return { message: 'Keyword removed from programme' };
+  }
+
   // ==================== USER MANAGEMENT ====================
 
-  async getAllUsers(page: number = 1, limit: number = 20) {
+  async getAllUsers(page: number = 1, limit: number = 20, search?: string) {
     const skip = (page - 1) * limit;
+    const where: any = {};
+
+    if (search?.trim()) {
+      where.OR = [
+        { firstName: { contains: search.trim(), mode: 'insensitive' } },
+        { lastName: { contains: search.trim(), mode: 'insensitive' } },
+        { email: { contains: search.trim(), mode: 'insensitive' } },
+      ];
+    }
 
     const [data, total] = await Promise.all([
       this.prisma.user.findMany({
+        where,
         skip,
         take: limit,
         select: {
@@ -191,7 +245,7 @@ export class AdminService {
         },
         orderBy: { createdAt: 'desc' },
       }),
-      this.prisma.user.count(),
+      this.prisma.user.count({ where }),
     ]);
 
     return {
@@ -227,7 +281,7 @@ export class AdminService {
     });
 
     if (!user) {
-      throw new Error('User not found');
+      throw new NotFoundException('User not found');
     }
 
     const updated = await this.prisma.user.update({
@@ -314,6 +368,9 @@ export class AdminService {
         where,
         skip,
         take: limit,
+        include: {
+          _count: { select: { requirements: true } },
+        },
         orderBy: { name: 'asc' },
       }),
       this.prisma.subject.count({ where }),
@@ -345,7 +402,7 @@ export class AdminService {
   ) {
     const subject = await this.prisma.subject.findUnique({ where: { id } });
     if (!subject) {
-      throw new Error('Subject not found');
+      throw new NotFoundException('Subject not found');
     }
 
     if (input.name && input.name !== subject.name) {
@@ -370,7 +427,7 @@ export class AdminService {
   async deleteSubject(id: string) {
     const subject = await this.prisma.subject.findUnique({ where: { id } });
     if (!subject) {
-      throw new Error('Subject not found');
+      throw new NotFoundException('Subject not found');
     }
 
     const count = await this.prisma.programmeRequirement.count({
@@ -413,8 +470,24 @@ export class AdminService {
         name: input.name,
         abbreviation: input.abbreviation,
         description: input.description,
+        type: input.type,
       },
     });
+  }
+
+  async deleteFaculty(id: string) {
+    const faculty = await this.prisma.academicUnit.findUnique({
+      where: { id },
+      include: { _count: { select: { departments: true } } },
+    });
+    if (!faculty) throw new NotFoundException('Faculty not found');
+    if (faculty._count.departments > 0) {
+      throw new Error(
+        `Cannot delete "${faculty.name}" - it has ${faculty._count.departments} department(s)`,
+      );
+    }
+    await this.prisma.academicUnit.delete({ where: { id } });
+    return { message: 'Faculty deleted successfully' };
   }
 
   async createDepartment(input: {
@@ -423,7 +496,10 @@ export class AdminService {
     description?: string;
     academicUnitId: string;
   }) {
-    return this.prisma.department.create({ data: input });
+    return this.prisma.department.create({
+      data: input,
+      include: { _count: { select: { programmes: true } } },
+    });
   }
 
   async updateDepartment(id: string, input: any) {
@@ -433,11 +509,293 @@ export class AdminService {
     });
   }
 
+  async deleteDepartment(id: string) {
+    const dept = await this.prisma.department.findUnique({
+      where: { id },
+      include: { _count: { select: { programmes: true } } },
+    });
+    if (!dept) throw new NotFoundException('Department not found');
+    if (dept._count.programmes > 0) {
+      throw new Error(
+        `Cannot delete "${dept.name}" - it has ${dept._count.programmes} programme(s)`,
+      );
+    }
+    await this.prisma.department.delete({ where: { id } });
+    return { message: 'Department deleted successfully' };
+  }
+
+  // ==================== TUITION MANAGEMENT ====================
+
+  async getAllTuition(page: number = 1, limit: number = 50, programmeId?: string) {
+    const skip = (page - 1) * limit;
+    const where: any = {};
+    if (programmeId) where.programmeId = programmeId;
+
+    const [data, total] = await Promise.all([
+      this.prisma.tuition.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          programme: {
+            select: { id: true, name: true, code: true },
+          },
+        },
+        orderBy: [{ programme: { name: 'asc' } }, { academicYear: 'desc' }],
+      }),
+      this.prisma.tuition.count({ where }),
+    ]);
+
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async createTuition(input: {
+    programmeId: string;
+    academicYear: string;
+    amount: number;
+    currency?: string;
+  }) {
+    return this.prisma.tuition.create({
+      data: {
+        programmeId: input.programmeId,
+        academicYear: input.academicYear,
+        amount: input.amount,
+        currency: input.currency || 'XAF',
+      },
+      include: {
+        programme: { select: { id: true, name: true, code: true } },
+      },
+    });
+  }
+
+  async updateTuition(id: string, input: { academicYear?: string; amount?: number; currency?: string }) {
+    const tuition = await this.prisma.tuition.findUnique({ where: { id } });
+    if (!tuition) throw new NotFoundException('Tuition record not found');
+
+    return this.prisma.tuition.update({
+      where: { id },
+      data: {
+        ...(input.academicYear !== undefined && { academicYear: input.academicYear }),
+        ...(input.amount !== undefined && { amount: input.amount }),
+        ...(input.currency !== undefined && { currency: input.currency }),
+      },
+      include: {
+        programme: { select: { id: true, name: true, code: true } },
+      },
+    });
+  }
+
+  async deleteTuition(id: string) {
+    await this.prisma.tuition.delete({ where: { id } });
+    return { message: 'Tuition record deleted' };
+  }
+
+  // ==================== CAREER MANAGEMENT ====================
+
+  async getAllCareers(page: number = 1, limit: number = 50, search?: string) {
+    const skip = (page - 1) * limit;
+    const where: any = {};
+    if (search?.trim()) {
+      where.name = { contains: search.trim(), mode: 'insensitive' };
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.career.findMany({
+        where,
+        skip,
+        take: limit,
+        include: { _count: { select: { programmes: true } } },
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.career.count({ where }),
+    ]);
+
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async createCareer(input: { name: string; description?: string }) {
+    return this.prisma.career.create({ data: input });
+  }
+
+  async updateCareer(id: string, input: { name?: string; description?: string }) {
+    const career = await this.prisma.career.findUnique({ where: { id } });
+    if (!career) throw new NotFoundException('Career not found');
+    return this.prisma.career.update({
+      where: { id },
+      data: {
+        ...(input.name !== undefined && { name: input.name }),
+        ...(input.description !== undefined && { description: input.description }),
+      },
+    });
+  }
+
+  async deleteCareer(id: string) {
+    const count = await this.prisma.programmeCareer.count({ where: { careerId: id } });
+    if (count > 0) {
+      throw new Error(`Cannot delete - used in ${count} programme(s)`);
+    }
+    await this.prisma.career.delete({ where: { id } });
+    return { message: 'Career deleted' };
+  }
+
+  // ==================== KEYWORD MANAGEMENT ====================
+
+  async getAllKeywords(page: number = 1, limit: number = 50, search?: string) {
+    const skip = (page - 1) * limit;
+    const where: any = {};
+    if (search?.trim()) {
+      where.word = { contains: search.trim(), mode: 'insensitive' };
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.keyword.findMany({
+        where,
+        skip,
+        take: limit,
+        include: { _count: { select: { programmes: true } } },
+        orderBy: { word: 'asc' },
+      }),
+      this.prisma.keyword.count({ where }),
+    ]);
+
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async createKeyword(input: { word: string }) {
+    return this.prisma.keyword.create({ data: input });
+  }
+
+  async updateKeyword(id: string, input: { word?: string }) {
+    const keyword = await this.prisma.keyword.findUnique({ where: { id } });
+    if (!keyword) throw new NotFoundException('Keyword not found');
+    return this.prisma.keyword.update({
+      where: { id },
+      data: { ...(input.word !== undefined && { word: input.word }) },
+    });
+  }
+
+  async deleteKeyword(id: string) {
+    const count = await this.prisma.programmeKeyword.count({ where: { keywordId: id } });
+    if (count > 0) {
+      throw new Error(`Cannot delete - used in ${count} programme(s)`);
+    }
+    await this.prisma.keyword.delete({ where: { id } });
+    return { message: 'Keyword deleted' };
+  }
+
+  // ==================== ADMISSION RULES MANAGEMENT ====================
+
+  async getAllAdmissionRules(page: number = 1, limit: number = 50) {
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.generalAdmissionRule.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.generalAdmissionRule.count(),
+    ]);
+
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async createAdmissionRule(input: { title: string; description: string; isActive?: boolean }) {
+    return this.prisma.generalAdmissionRule.create({ data: input });
+  }
+
+  async updateAdmissionRule(id: string, input: { title?: string; description?: string; isActive?: boolean }) {
+    return this.prisma.generalAdmissionRule.update({
+      where: { id },
+      data: {
+        ...(input.title !== undefined && { title: input.title }),
+        ...(input.description !== undefined && { description: input.description }),
+        ...(input.isActive !== undefined && { isActive: input.isActive }),
+      },
+    });
+  }
+
+  async deleteAdmissionRule(id: string) {
+    await this.prisma.generalAdmissionRule.delete({ where: { id } });
+    return { message: 'Admission rule deleted' };
+  }
+
+  // ==================== DUPLICATE DETECTION ====================
+
+  async detectDuplicateFaculties() {
+    const faculties = await this.prisma.academicUnit.findMany();
+
+    const nameMap = new Map<string, typeof faculties>();
+    for (const f of faculties) {
+      const key = f.name.toLowerCase().trim();
+      if (!nameMap.has(key)) nameMap.set(key, []);
+      nameMap.get(key)!.push(f);
+    }
+
+    return Array.from(nameMap.entries())
+      .filter(([, group]) => group.length > 1)
+      .map(([name, group]) => ({
+        name,
+        count: group.length,
+        items: group.map((f) => ({ id: f.id, name: f.name, abbreviation: f.abbreviation })),
+      }));
+  }
+
+  async detectDuplicateProgrammes() {
+    const programmes = await this.prisma.programme.findMany({
+      select: { id: true, name: true, code: true },
+    });
+
+    const nameMap = new Map<string, typeof programmes>();
+    for (const p of programmes) {
+      const key = p.name.toLowerCase().trim();
+      if (!nameMap.has(key)) nameMap.set(key, []);
+      nameMap.get(key)!.push(p);
+    }
+
+    const codeMap = new Map<string, typeof programmes>();
+    for (const p of programmes) {
+      const key = p.code.toLowerCase().trim();
+      if (!codeMap.has(key)) codeMap.set(key, []);
+      codeMap.get(key)!.push(p);
+    }
+
+    const nameDupes = Array.from(nameMap.entries())
+      .filter(([, group]) => group.length > 1)
+      .map(([name, group]) => ({ field: 'name', value: name, count: group.length, items: group }));
+
+    const codeDupes = Array.from(codeMap.entries())
+      .filter(([, group]) => group.length > 1)
+      .map(([code, group]) => ({ field: 'code', value: code, count: group.length, items: group }));
+
+    return [...nameDupes, ...codeDupes];
+  }
+
+  async detectDuplicateSubjects() {
+    const subjects = await this.prisma.subject.findMany();
+
+    const nameMap = new Map<string, typeof subjects>();
+    for (const s of subjects) {
+      const key = s.name.toLowerCase().trim();
+      if (!nameMap.has(key)) nameMap.set(key, []);
+      nameMap.get(key)!.push(s);
+    }
+
+    return Array.from(nameMap.entries())
+      .filter(([, group]) => group.length > 1)
+      .map(([name, group]) => ({
+        name,
+        count: group.length,
+        items: group.map((s) => ({ id: s.id, name: s.name, code: s.code, level: s.level })),
+      }));
+  }
+
   // ==================== ANNOUNCEMENTS ====================
 
   async createAnnouncement(input: {
     title: string;
     content: string;
+    programmeId?: string;
     authorId: string;
   }) {
     return this.prisma.announcement.create({ data: input });
@@ -454,6 +812,9 @@ export class AdminService {
         author: {
           select: { id: true, firstName: true, lastName: true },
         },
+        programme: {
+          select: { id: true, name: true, code: true },
+        },
       },
     });
   }
@@ -465,7 +826,7 @@ export class AdminService {
     });
 
     if (!announcement) {
-      throw new Error('Announcement not found');
+      throw new NotFoundException('Announcement not found');
     }
 
     return this.prisma.announcement.update({
