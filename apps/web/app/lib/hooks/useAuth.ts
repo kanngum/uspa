@@ -9,6 +9,13 @@ interface LoginInput {
   password: string;
 }
 
+interface RegisterInput {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+}
+
 export function useAuth() {
   const queryClient = useQueryClient();
 
@@ -36,6 +43,16 @@ export function useAuth() {
     },
   });
 
+  const registerMutation = useMutation({
+    mutationFn: (input: RegisterInput) => api.register(input),
+    onSuccess: (data: any) => {
+      if (data?.data?.token) {
+        api.setToken(data.data.token);
+      }
+      queryClient.invalidateQueries({ queryKey: ["auth", "profile"] });
+    },
+  });
+
   const logout = useCallback(() => {
     api.setToken(null);
     queryClient.setQueryData(["auth", "profile"], null);
@@ -47,7 +64,7 @@ export function useAuth() {
     isAuthenticated,
     isLoading,
     login: loginMutation,
+    register: registerMutation,
     logout,
   };
 }
-

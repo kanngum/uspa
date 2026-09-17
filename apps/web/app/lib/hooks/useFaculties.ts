@@ -10,11 +10,18 @@ export function useFaculties() {
   });
 }
 
-export function useFaculty(id: string) {
+export function useFaculty(idOrCode: string) {
   return useQuery({
-    queryKey: ["faculty", id],
-    queryFn: () => api.getFaculty(id),
-    enabled: !!id,
+    queryKey: ["faculty", idOrCode],
+    queryFn: async () => {
+      // Try by code (abbreviation) first, fallback to direct ID lookup
+      try {
+        return await api.getFacultyByCode(idOrCode);
+      } catch {
+        return api.getFaculty(idOrCode);
+      }
+    },
+    enabled: !!idOrCode,
   });
 }
 

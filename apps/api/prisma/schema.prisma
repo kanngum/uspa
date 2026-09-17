@@ -55,11 +55,16 @@ model Programme {
   level        ProgrammeLevel
   duration     Int
   description  String?
+  isActive     Boolean                @default(true)
   createdAt    DateTime               @default(now())
   updatedAt    DateTime               @updatedAt
   department   Department             @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  requirements ProgrammeRequirement[]
-  tuition      Tuition[]
+  requirements    ProgrammeRequirement[]
+  tuition         Tuition[]
+  careers         ProgrammeCareer[]
+  keywords        ProgrammeKeyword[]
+  savedProgrammes SavedProgramme[]
+  announcements   Announcement[]
 
   @@index([name])
 }
@@ -80,6 +85,7 @@ model Tuition {
 model Subject {
   id           String                 @id @default(cuid())
   name         String                 @unique
+  code         String?
   level        SubjectLevel
   createdAt    DateTime               @default(now())
   updatedAt    DateTime               @updatedAt
@@ -96,6 +102,89 @@ model ProgrammeRequirement {
   subject         Subject         @relation(fields: [subjectId], references: [id])
 
   @@unique([programmeId, subjectId])
+}
+
+model Career {
+  id          String            @id @default(cuid())
+  name        String            @unique
+  description String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  programmes  ProgrammeCareer[]
+}
+
+model ProgrammeCareer {
+  programmeId  String
+  careerId     String
+  programme    Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  career       Career    @relation(fields: [careerId], references: [id])
+
+  @@id([programmeId, careerId])
+}
+
+model Keyword {
+  id          String             @id @default(cuid())
+  word        String             @unique
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  programmes  ProgrammeKeyword[]
+}
+
+model ProgrammeKeyword {
+  programmeId  String
+  keywordId    String
+  programme    Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  keyword      Keyword   @relation(fields: [keywordId], references: [id])
+
+  @@id([programmeId, keywordId])
+}
+
+model User {
+  id              String          @id @default(cuid())
+  email           String          @unique
+  passwordHash    String
+  firstName       String
+  lastName        String
+  role            UserRole        @default(VISITOR)
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  savedProgrammes SavedProgramme[]
+  searchHistory   SearchHistory[]
+  announcements   Announcement[]
+}
+
+model SavedProgramme {
+  id          String    @id @default(cuid())
+  userId      String
+  programmeId String
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  programme   Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programmeId])
+}
+
+model SearchHistory {
+  id          String   @id @default(cuid())
+  userId      String?
+  query       String
+  filters     Json?
+  createdAt   DateTime @default(now())
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model Announcement {
+  id          String    @id @default(cuid())
+  title       String
+  content     String
+  programmeId String?
+  authorId    String
+  published   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  programme   Programme? @relation(fields: [programmeId], references: [id], onDelete: SetNull)
+  author      User      @relation(fields: [authorId], references: [id])
 }
 
 model GeneralAdmissionRule {
@@ -126,6 +215,9 @@ enum DegreeType {
   MA
   MENG
   PHD
+  CERTIFICATE
+  BTECH
+  HPD
 }
 
 enum ProgrammeLevel {
@@ -143,4 +235,10 @@ enum SubjectLevel {
 enum RequirementType {
   REQUIRED
   OPTIONAL
+}
+
+enum UserRole {
+  VISITOR
+  STUDENT
+  ADMIN
 }

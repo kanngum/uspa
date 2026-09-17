@@ -55,8 +55,12 @@ class ApiClient {
     return this.request<{ success: boolean; data: any[] }>('/faculties');
   }
 
-  async getFaculty(id: string) {
-    return this.request<{ success: boolean; data: any }>(`/faculties/${id}`);
+  async getFaculty(idOrCode: string) {
+    return this.request<{ success: boolean; data: any }>(`/faculties/${idOrCode}`);
+  }
+
+  async getFacultyByCode(code: string) {
+    return this.request<{ success: boolean; data: any }>(`/faculties/code/${code}`);
   }
 
   // Departments
@@ -89,6 +93,22 @@ class ApiClient {
 
   async getProgramme(id: string) {
     return this.request<{ success: boolean; data: any }>(`/programmes/${id}`);
+  }
+
+  async getProgrammeByCode(code: string) {
+    return this.request<{ success: boolean; data: any }>(`/programmes/code/${code}`);
+  }
+
+  async getFeaturedProgrammes() {
+    return this.request<{ success: boolean; data: any[] }>('/programmes/featured');
+  }
+
+  // Auth - Register
+  async register(input: { email: string; password: string; firstName: string; lastName: string }) {
+    return this.request<{ success: boolean; data: any }>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
   }
 
   // Autocomplete
@@ -522,6 +542,23 @@ class ApiClient {
     return this.request<{ success: boolean; data: any }>('/import/confirm', {
       method: 'POST',
       body: JSON.stringify({ type, data }),
+    });
+  }
+
+  /** Upload JSON (flat array or nested structure like { academicUnits: [...] }) - auto-detects import type */
+  async importUpload(data: any) {
+    return this.request<{ success: boolean; data: any }>('/import/upload', {
+      method: 'POST',
+      body: JSON.stringify({ data }),
+    });
+  }
+
+  /** Quick import: validate + confirm in one call, skips preview step */
+  async importQuick(type: string, data: any) {
+    const importData = Array.isArray(data) ? data : [data];
+    return this.request<{ success: boolean; data: any }>('/import/quick', {
+      method: 'POST',
+      body: JSON.stringify({ type, data: importData }),
     });
   }
 

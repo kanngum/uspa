@@ -4,9 +4,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/app/lib/api";
 
 export function useFavourites() {
+  const hasToken = !!api.getToken();
   return useQuery({
     queryKey: ["favourites"],
     queryFn: () => api.getFavourites(),
+    enabled: hasToken,
   });
 }
 

@@ -21,11 +21,18 @@ export function useSearchProgrammes(params: SearchParams) {
   });
 }
 
-export function useProgramme(id: string) {
+export function useProgramme(idOrCode: string) {
   return useQuery({
-    queryKey: ["programme", id],
-    queryFn: () => api.getProgramme(id),
-    enabled: !!id,
+    queryKey: ["programme", idOrCode],
+    queryFn: async () => {
+      // Try by code first (programme code like BSC-CSC), fallback to ID
+      try {
+        return await api.getProgrammeByCode(idOrCode);
+      } catch {
+        return api.getProgramme(idOrCode);
+      }
+    },
+    enabled: !!idOrCode,
   });
 }
 
@@ -40,8 +47,7 @@ export function useAutoComplete(query: string) {
 export function useFeaturedProgrammes() {
   return useQuery({
     queryKey: ["programmes", "featured"],
-    queryFn: () =>
-      api.searchProgrammes({ page: 1, limit: 8 }),
+    queryFn: () => api.getFeaturedProgrammes(),
   });
 }
 

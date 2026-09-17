@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { GraduationCap, Mail, Lock, Eye, EyeOff, User, AlertCircle } from "lucide-react";
+import { GraduationCap, Mail, Lock, Eye, EyeOff, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
@@ -14,7 +14,7 @@ export default function RegisterPage() {
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "", confirmPassword: "" });
   const [showPassword, setShowPassword] = useState(false);
   const { addToast } = useToast();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, register } = useAuth();
 
   // Redirect if already logged in
   if (isAuthenticated) {
@@ -40,7 +40,23 @@ export default function RegisterPage() {
       return;
     }
 
-    addToast("Registration is currently restricted to admin accounts. Please contact the system administrator.", "warning");
+    register.mutate(
+      {
+        email: form.email,
+        password: form.password,
+        firstName: form.firstName,
+        lastName: form.lastName,
+      },
+      {
+        onSuccess: () => {
+          addToast("Account created successfully! Welcome!", "success");
+          router.push("/");
+        },
+        onError: (error: any) => {
+          addToast(error?.message || "Registration failed. Please try again.", "error");
+        },
+      }
+    );
   };
 
   return (
@@ -54,10 +70,6 @@ export default function RegisterPage() {
           <CardDescription>Join USPA to save programmes and get personalized advice</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="mb-4 flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-400">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            <p>Registration is currently restricted to admin users. Only the admin account can access the system.</p>
-          </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -73,7 +85,6 @@ export default function RegisterPage() {
                     required
                   />
                 </div>
-              </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Last name</label>
                 <div className="relative">
@@ -87,7 +98,6 @@ export default function RegisterPage() {
                     required
                   />
                 </div>
-              </div>
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Email address</label>
@@ -102,7 +112,6 @@ export default function RegisterPage() {
                   required
                 />
               </div>
-            </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Password</label>
               <div className="relative">
@@ -119,7 +128,6 @@ export default function RegisterPage() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-            </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Confirm password</label>
               <div className="relative">
@@ -133,9 +141,8 @@ export default function RegisterPage() {
                   required
                 />
               </div>
-            </div>
-            <Button type="submit" variant="primary" className="w-full">
-              Create account
+            <Button type="submit" variant="primary" className="w-full" disabled={register.isPending}>
+              {register.isPending ? "Creating account..." : "Create account"}
             </Button>
           </form>
           <p className="mt-6 text-center text-sm text-zinc-500">
