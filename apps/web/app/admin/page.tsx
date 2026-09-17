@@ -27,6 +27,7 @@ import {
   useProgrammesByFaculty, usePopularSearches, useUserStats, useRecentSearches,
   useProgrammeRequirements, useCreateProgrammeRequirement, useUpdateProgrammeRequirement, useDeleteProgrammeRequirement,
   useImportValidate, useImportPreview, useImportConfirm,
+  useCatalogueReview, useResolveCatalogueReview,
 } from "@/app/lib/hooks/useAdmin";
 
 type ModalMode = 'create' | 'edit' | null;
@@ -80,6 +81,7 @@ export default function AdminDashboardPage() {
   const tabs = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
     { id: "programmes", label: "Programmes", icon: GraduationCap },
+    { id: "catalogue-review", label: "Catalogue Review", icon: AlertTriangle },
     { id: "subjects", label: "Subjects", icon: BookOpen },
     { id: "users", label: "Users", icon: Users },
     { id: "tuition", label: "Tuition", icon: DollarSign },
@@ -142,6 +144,8 @@ export default function AdminDashboardPage() {
       {/* ==================== PROGRAMMES TAB ==================== */}
       {activeTab === "programmes" && <ProgrammesTab page={page} setPage={setPage} search={search} setSearch={setSearch} showToast={showToast} />}
 
+      {activeTab === "catalogue-review" && <CatalogueReviewTab page={page} setPage={setPage} showToast={showToast} />}
+
       {/* ==================== SUBJECTS TAB ==================== */}
       {activeTab === "subjects" && <SubjectsTab page={page} setPage={setPage} search={search} setSearch={setSearch} showToast={showToast} />}
 
@@ -176,6 +180,51 @@ export default function AdminDashboardPage() {
       {activeTab === "duplicates" && <DuplicatesTab />}
     </div>
   );
+}
+
+function CatalogueReviewTab({ page, setPage, showToast }: any) {
+  const { data, isLoading } = useCatalogueReview(page, 20);
+  const resolve = useResolveCatalogueReview();
+  const [selected, setSelected] = useState<any>(null);
+  const [form, setForm] = useState<any>({});
+  const payload = data || { data: [], totalPages: 1 };
+  const open = (item: any) => {
+    setSelected(item);
+    setForm({
+      applicationDeadline: item.applicationDeadline ? new Date(item.applicationDeadline).toISOString().slice(0, 10) : "",
+      applicationStatus: item.applicationStatus || "Open",
+      sourceCode: item.sourceCode || "",
+      feeAmount: item.tuition?.[0]?.amount || "",
+      feePeriod: item.tuition?.[0]?.feePeriod || "UNKNOWN",
+      academicYear: item.tuition?.[0]?.academicYear || item.applicationCycle || "2026/2027",
+    });
+  };
+  const save = async () => {
+    try {
+      await resolve.mutateAsync({ id: selected.id, input: { ...form, feeAmount: form.feeAmount === "" ? undefined : Number(form.feeAmount) } });
+      showToast("success", "Catalogue record updated"); setSelected(null);
+    } catch (error: any) { showToast("error", error.message || "Could not update record"); }
+  };
+  return <div className="space-y-6">
+    <Card><CardHeader><CardTitle className="flex items-center gap-2 text-base"><AlertTriangle className="h-4 w-4 text-amber-500" /> Catalogue Review Queue</CardTitle></CardHeader><CardContent>
+      <p className="mb-4 text-sm text-zinc-500">Correct the flagged information and save. A record automatically leaves this queue once all checks pass.</p>
+      {isLoading ? <p className="py-6 text-sm text-zinc-500">Loading review queue…</p> : payload?.data?.length ? <div className="space-y-3">
+        {payload.data.map((item: any) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+          <div><p className="font-medium text-zinc-900 dark:text-zinc-50">{item.name}</p><p className="mt-1 text-xs text-zinc-500">{item.department?.academicUnit?.abbreviation} · {item.sourceCode || item.code}</p><p className="mt-1 text-sm text-amber-700 dark:text-amber-400">{item.reviewNotes}</p></div>
+          <Button variant="outline" onClick={() => open(item)}><Edit className="mr-1 h-4 w-4" /> Review</Button>
+        </div>)}
+      </div> : <EmptyState icon="book" title="Catalogue is clear" description="No programmes need data review." />}
+      {payload?.totalPages > 1 && <div className="mt-5 flex justify-end gap-2"><Button variant="outline" disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</Button><Button variant="outline" disabled={page >= payload.totalPages} onClick={() => setPage(page + 1)}>Next</Button></div>}
+    </CardContent></Card>
+    {selected && <Modal title={`Review: ${selected.name}`} onClose={() => setSelected(null)}><div className="space-y-4">
+      <label className="block text-sm">Official programme code<input value={form.sourceCode} onChange={e => setForm({ ...form, sourceCode: e.target.value })} className="mt-1 w-full rounded border p-2 dark:bg-zinc-800" /></label>
+      <label className="block text-sm">Application deadline<input type="date" value={form.applicationDeadline} onChange={e => setForm({ ...form, applicationDeadline: e.target.value })} className="mt-1 w-full rounded border p-2 dark:bg-zinc-800" /></label>
+      <label className="block text-sm">Application status<select value={form.applicationStatus} onChange={e => setForm({ ...form, applicationStatus: e.target.value })} className="mt-1 w-full rounded border p-2 dark:bg-zinc-800"><option>Open</option><option>Closed</option></select></label>
+      <div className="grid grid-cols-2 gap-3"><label className="block text-sm">Fee (XAF)<input type="number" min="1" value={form.feeAmount} onChange={e => setForm({ ...form, feeAmount: e.target.value })} className="mt-1 w-full rounded border p-2 dark:bg-zinc-800" /></label><label className="block text-sm">Fee type<select value={form.feePeriod} onChange={e => setForm({ ...form, feePeriod: e.target.value })} className="mt-1 w-full rounded border p-2 dark:bg-zinc-800"><option value="ANNUAL">Annual</option><option value="FIRST_YEAR">First year</option><option value="PROGRAMME_TOTAL">Programme total</option><option value="UNKNOWN">Unknown</option></select></label></div>
+      <label className="block text-sm">Academic year<input value={form.academicYear} onChange={e => setForm({ ...form, academicYear: e.target.value })} className="mt-1 w-full rounded border p-2 dark:bg-zinc-800" /></label>
+      <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setSelected(null)}>Cancel</Button><Button onClick={save} disabled={resolve.isPending}><Save className="mr-1 h-4 w-4" /> Save and re-check</Button></div>
+    </div></Modal>}
+  </div>;
 }
 
 // ==================== DASHBOARD TAB ====================

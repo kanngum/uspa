@@ -42,6 +42,7 @@ export class ProgrammesService {
       where.OR = [
         { name: { contains: searchTerm, mode: 'insensitive' } },
         { code: { contains: searchTerm, mode: 'insensitive' } },
+        { sourceCode: { contains: searchTerm, mode: 'insensitive' } },
         { description: { contains: searchTerm, mode: 'insensitive' } },
         {
           keywords: {
@@ -160,6 +161,9 @@ export class ProgrammesService {
           },
           orderBy: [{ requirementType: 'asc' }, { subject: { name: 'asc' } }],
         },
+        admissionRules: {
+          orderBy: { category: 'asc' },
+        },
         tuition: {
           orderBy: { academicYear: 'desc' },
         },
@@ -196,6 +200,9 @@ export class ProgrammesService {
         },
         requirements: {
           include: { subject: true },
+        },
+        admissionRules: {
+          orderBy: { category: 'asc' },
         },
         tuition: {
           orderBy: { academicYear: 'desc' },

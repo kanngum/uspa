@@ -1,0 +1,180 @@
+import { ArrowUpRight, BookOpen, Clock3, FileCheck2, Info, Wallet } from "lucide-react";
+import Link from "next/link";
+import type { HomeProgrammeRecord } from "@/app/lib/types/home";
+import {
+  formatDuration,
+  formatProgrammeCode,
+  formatProgrammeLevel,
+} from "@/app/lib/eligibility";
+import { formatCurrency } from "@/app/lib/utils";
+
+interface RequirementsRecordProps {
+  programme?: HomeProgrammeRecord;
+  isLoading?: boolean;
+}
+
+export function RequirementsRecord({
+  programme,
+  isLoading = false,
+}: RequirementsRecordProps) {
+  const title =
+    programme?.name ||
+    (isLoading ? "Loading programme information" : "Programme information unavailable");
+
+  const code = formatProgrammeCode(programme?.code);
+
+  const details = [
+    {
+      label: "Programme level",
+      value: formatProgrammeLevel(programme?.level),
+      icon: BookOpen,
+    },
+    {
+      label: "Duration",
+      value: formatDuration(programme?.duration),
+      icon: Clock3,
+    },
+    {
+      label: "Admission requirements",
+      value: programme?.requirementCount
+        ? `${programme.requirementCount} listed subject records`
+        : "View listed subjects and grades",
+      icon: FileCheck2,
+    },
+    {
+      label: "Tuition",
+      value: programme?.tuition
+        ? formatCurrency(
+            programme.tuition.amount,
+            programme.tuition.currency
+          )
+        : "See the current programme record",
+      icon: Wallet,
+    },
+  ];
+
+  return (
+    <div className="relative min-w-0 lg:pt-4">
+      {/* Small section label */}
+      <div className="mb-5 flex items-center gap-3">
+        <span className="h-px w-8 bg-accent" />
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-subtle-ink">
+          Programme information
+        </p>
+      </div>
+
+      <article className="overflow-hidden rounded-2xl border border-rule-strong bg-white shadow-record">
+        {/* Programme heading */}
+        <div className="relative overflow-hidden border-b border-rule bg-primary px-6 py-7 text-white sm:px-8">
+          <div className="absolute right-0 top-0 h-32 w-32 translate-x-10 -translate-y-10 rounded-full border border-white/10" />
+          <div className="absolute right-8 top-8 h-16 w-16 rounded-full border border-accent/20" />
+
+          <div className="relative">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-accent px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white">
+                Featured programme
+              </span>
+
+              {code && (
+                <span className="rounded-full border border-white/20 bg-white/5 px-3 py-1 font-mono text-[10px] font-semibold text-accent-muted">
+                  {code}
+                </span>
+              )}
+            </div>
+
+            <h2 className="mt-5 max-w-2xl text-[24px] font-semibold leading-tight tracking-[-0.035em] sm:text-[28px]">
+              {title}
+            </h2>
+
+            <p className="mt-3 max-w-xl text-sm leading-6 text-white/65">
+              Review the key programme details and admission information before
+              exploring the full programme record.
+            </p>
+          </div>
+        </div>
+
+        {/* Programme facts */}
+        <div className="bg-paper-soft p-4 sm:p-5">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {details.map((detail) => {
+              const Icon = detail.icon;
+
+              return (
+                <div
+                  key={detail.label}
+                  className="group rounded-xl border border-rule bg-white p-4 transition-colors hover:border-accent/30"
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent-dark">
+                      <Icon className="h-4 w-4" aria-hidden="true" />
+                    </span>
+
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-subtle-ink">
+                        {detail.label}
+                      </p>
+
+                      <p className="mt-1.5 break-words text-sm font-semibold leading-5 text-primary">
+                        {detail.value}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Guidance */}
+        <div className="border-t border-rule bg-white px-6 py-5 sm:px-8">
+          <div className="flex gap-3">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold-soft/20">
+              <Info className="h-4 w-4 text-gold-soft" aria-hidden="true" />
+            </span>
+
+            <div>
+              <p className="text-xs font-semibold text-primary">
+                Before you apply
+              </p>
+
+              <p className="mt-1 text-xs leading-5 text-muted-ink">
+                USPA uses information listed in the university catalogue.
+                Confirm final requirements, fees, and intake details with the
+                institution before applying.
+              </p>
+            </div>
+          </div>
+
+          {programme?.code && (
+            <Link
+              href={`/programmes/${programme.code}`}
+              className="group mt-5 inline-flex min-h-11 items-center gap-2 rounded-control bg-primary px-4 text-xs font-semibold text-white transition-all hover:bg-primary-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+            >
+              View full programme details
+              <ArrowUpRight
+                className="h-3.5 w-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                aria-hidden="true"
+              />
+            </Link>
+          )}
+        </div>
+      </article>
+
+      {/* Supporting caption */}
+      <div className="mt-4 flex items-center gap-3 px-1">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-subtle-ink">
+          Explore
+        </span>
+
+        <span
+          className="h-px flex-1 bg-rule-strong"
+          aria-hidden="true"
+        />
+
+        <span className="text-[10px] uppercase tracking-[0.14em] text-subtle-ink">
+          Compare. Verify. Decide.
+        </span>
+      </div>
+    </div>
+  );
+}

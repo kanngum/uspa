@@ -2,71 +2,60 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { api } from "@/app/lib/api";
+import { formatEligibilitySummary } from "@/app/lib/eligibility";
+import type {
+  EligibilityCheckInput,
+  EligibilityFormInput,
+  EligibilityResults,
+  EligibilityResultItem,
+  EligibilityStatus,
+} from "@/app/lib/types/eligibility";
 
-interface SubjectGrade {
-  subjectId: string;
-  grade: string;
-}
+type SubjectGrade = EligibilityCheckInput["oLevelSubjects"][number];
 
-interface SubjectGradeByName {
-  name: string;
-  grade: string;
-}
+export function transformResults(rawResults: any[] | undefined): EligibilityResults {
+  const eligible: EligibilityResultItem[] = [];
+  const conditionallyEligible: EligibilityResultItem[] = [];
+  const notEligible: EligibilityResultItem[] = [];
 
-interface EligibilityInput {
-  oLevelSubjects: SubjectGrade[];
-  aLevelSubjects?: SubjectGrade[];
-  programmeId?: string;
-  programmeCode?: string;
-  level?: string;
-}
-
-interface UgDegreeInfo {
-  degreeName: string;
-  institution: string;
-  graduationYear: string;
-  classification: string;
-  degreeLabel?: string;
-  previousProgrammeId?: string;
-}
-
-function transformResults(rawResults: any[]): {
-  status: string;
-  summary: string;
-  eligible: any[];
-  conditionallyEligible: any[];
-  notEligible: any[];
-} {
-  const eligible: any[] = [];
-  const conditionallyEligible: any[] = [];
-  const notEligible: any[] = [];
-  let status = 'NOT_ELIGIBLE';
-
-  (rawResults || []).forEach((r: any) => {
-    const item = {
-      id: r.programmeId,
-      name: r.programmeName,
-      code: r.programmeCode,
-      level: r.programmeLevel,
-      matchScore: r.status === 'ELIGIBLE' ? 90 : r.status === 'CONDITIONALLY_ELIGIBLE' ? 60 : 30,
-      missingRequirements: r.missingRequirements || [],
-      satisfiedRequirements: r.satisfiedRequirements || [],
+  (rawResults || []).forEach((result: any) => {
+    const status = (result.status || "NOT_ELIGIBLE") as EligibilityStatus;
+    const item: EligibilityResultItem = {
+      id: result.programmeId,
+      name: result.programmeName,
+      code: result.programmeCode,
+      level: result.programmeLevel,
+      status,
+      reasons: Array.isArray(result.reasons) ? result.reasons : [],
+      missingRequirements: result.missingRequirements || [],
+      satisfiedRequirements: result.satisfiedRequirements || [],
     };
 
-    if (r.status === 'ELIGIBLE') {
+    if (status === "ELIGIBLE") {
       eligible.push(item);
-      if (status === 'NOT_ELIGIBLE') status = 'ELIGIBLE';
-    } else if (r.status === 'CONDITIONALLY_ELIGIBLE') {
+    } else if (status === "CONDITIONALLY_ELIGIBLE") {
       conditionallyEligible.push(item);
-      if (status !== 'ELIGIBLE') status = 'CONDITIONALLY_ELIGIBLE';
     } else {
       notEligible.push(item);
     }
   });
 
+  const status: EligibilityStatus =
+    eligible.length > 0
+      ? "ELIGIBLE"
+      : conditionallyEligible.length > 0
+        ? "CONDITIONALLY_ELIGIBLE"
+        : "NOT_ELIGIBLE";
+
   return {
     status,
-    summary: `Found ${eligible.length} eligible, ${conditionallyEligible.length} conditionally eligible, and ${notEligible.length} not eligible programmes.`,
+    summary: rawResults?.length
+      ? formatEligibilitySummary({
+          eligible: eligible.length,
+          conditional: conditionallyEligible.length,
+          notEligible: notEligible.length,
+        })
+      : "No programme records matched the selected university and level.",
     eligible,
     conditionallyEligible,
     notEligible,
@@ -75,52 +64,53 @@ function transformResults(rawResults: any[]): {
 
 export function useCheckEligibility() {
   return useMutation({
-    mutationFn: async (input: { oLevelSubjects: SubjectGradeByName[]; aLevelSubjects?: SubjectGradeByName[]; programmeId?: string; programmeCode?: string; level?: string; ugDegree?: UgDegreeInfo }) => {
-      // For postgraduate level checks, skip subject resolution and use degree info
+    mutationFn: async (input: EligibilityFormInput) => {
       if (input.ugDegree) {
-        const payload: EligibilityInput = {
+        const payload: EligibilityCheckInput = {
           oLevelSubjects: [],
           aLevelSubjects: [],
           programmeId: input.programmeId,
           programmeCode: input.programmeCode,
           level: input.level,
+          universityId: input.universityId,
+          studentType: input.studentType || "DIRECT_ENTRY",
+          ugDegree: input.ugDegree,
         };
 
-        const response: any = await api.checkEligibility(payload);
-        const rawResults = response?.data || [];
-        return transformResults(rawResults);
+        const response = await api.checkEligibility(payload);
+        return transformResults(response?.data || []);
       }
 
-      // Resolve subject names to IDs
-      const allSubjects = [...input.oLevelSubjects, ...(input.aLevelSubjects || [])];
-      const uniqueNames = [...new Set(allSubjects.map((s) => s.name.trim().toLowerCase()))];
-
-      // Fetch subjects to map names to IDs
+      const allSubjects = [
+        ...input.oLevelSubjects,
+        ...(input.aLevelSubjects || []),
+      ];
       const subjectsData = await api.getSubjects({ limit: 1000 });
       const subjects = subjectsData?.data || [];
-      const nameToId = new Map(subjects.map((s: any) => [s.name.trim().toLowerCase(), s.id]));
+      const nameToId = new Map(
+        subjects.map((subject: any) => [subject.name.trim().toLowerCase(), subject.id]),
+      );
 
-      const mapSubject = (s: SubjectGradeByName): SubjectGrade => {
-        const normalized = s.name.trim().toLowerCase();
-        const subjectId = nameToId.get(normalized);
+      const mapSubject = (subject: { name: string; grade: string }): SubjectGrade => {
+        const subjectId = nameToId.get(subject.name.trim().toLowerCase());
         if (!subjectId) {
-          throw new Error(`Subject not found: ${s.name}`);
+          throw new Error(`Subject not found: ${subject.name}`);
         }
-        return { subjectId, grade: s.grade };
+        return { subjectId, grade: subject.grade };
       };
 
-      const payload: EligibilityInput = {
+      const payload: EligibilityCheckInput = {
         oLevelSubjects: input.oLevelSubjects.map(mapSubject),
         aLevelSubjects: input.aLevelSubjects?.map(mapSubject),
         programmeId: input.programmeId,
         programmeCode: input.programmeCode,
         level: input.level,
+        universityId: input.universityId,
+        studentType: input.studentType || "FRESHMAN",
       };
 
-      const response: any = await api.checkEligibility(payload);
-      const rawResults = response?.data || [];
-      return transformResults(rawResults);
+      const response = await api.checkEligibility(payload);
+      return transformResults(response?.data || []);
     },
   });
 }
-

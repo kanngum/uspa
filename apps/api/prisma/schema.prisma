@@ -50,16 +50,27 @@ model Programme {
   id           String                 @id @default(cuid())
   departmentId String
   code         String                 @unique
+  sourceCode   String?
   name         String
   degree       DegreeType
   level        ProgrammeLevel
   duration     Int
   description  String?
+  awardType    String?
+  entryRequirements String?
+  applicationDeadline DateTime?
+  applicationStatus   String?
+  applicationCycle    String?
+  sourceDocument      String?
+  sourceImportedAt    DateTime?
+  needsReview         Boolean                @default(false)
+  reviewNotes         String?
   isActive     Boolean                @default(true)
   createdAt    DateTime               @default(now())
   updatedAt    DateTime               @updatedAt
   department   Department             @relation(fields: [departmentId], references: [id], onDelete: Cascade)
   requirements    ProgrammeRequirement[]
+  admissionRules  ProgrammeAdmissionRule[]
   tuition         Tuition[]
   careers         ProgrammeCareer[]
   keywords        ProgrammeKeyword[]
@@ -75,11 +86,24 @@ model Tuition {
   academicYear String
   amount       Decimal   @db.Decimal(12, 2)
   currency     String    @default("XAF")
+  feePeriod    FeePeriod @default(UNKNOWN)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   programme    Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
 
   @@unique([programmeId, academicYear])
+}
+
+model ProgrammeAdmissionRule {
+  id          String                @id @default(cuid())
+  programmeId String
+  category    AdmissionRuleCategory
+  text        String
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  programme   Programme             @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+
+  @@unique([programmeId, category, text])
 }
 
 model Subject {
@@ -235,6 +259,21 @@ enum SubjectLevel {
 enum RequirementType {
   REQUIRED
   OPTIONAL
+}
+
+enum FeePeriod {
+  ANNUAL
+  PROGRAMME_TOTAL
+  FIRST_YEAR
+  UNKNOWN
+}
+
+enum AdmissionRuleCategory {
+  O_LEVEL
+  A_LEVEL
+  QUALIFICATION
+  ENTRANCE_EXAM
+  EQUIVALENCY
 }
 
 enum UserRole {

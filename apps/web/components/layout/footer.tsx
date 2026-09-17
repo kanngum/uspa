@@ -47,9 +47,9 @@ export function Footer() {
             <ul className="space-y-2">
               {[
                 { href: "/admission-checker", label: "Admission Requirements" },
-                { href: "/programmes", label: "Academic Calendar" },
+                { href: "/programmes", label: "Academic Catalogue" },
                 { href: "/programmes", label: "Tuition & Fees" },
-                { href: "/ai-advisor", label: "FAQ" },
+                { href: "/ai-advisor", label: "Questions & Guidance" },
               ].map((link) => (
                 <li key={link.label}>
                   <Link href={link.href} className="text-sm text-zinc-400 transition-colors hover:text-[#0FA3B1] dark:text-zinc-500 dark:hover:text-[#1DC4D4]">

@@ -128,7 +128,7 @@ export default function ProgrammeDetailPage() {
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="info">{programme.degree}</Badge>
               <Badge variant="secondary">{programme.level?.replace(/_/g, " ")}</Badge>
-              <span className="text-xs text-zinc-400">{programme.code}</span>
+              <span className="text-xs text-zinc-400">{programme.sourceCode || programme.code}</span>
             </div>
             <h1 className="mt-3 text-3xl font-bold text-zinc-900 dark:text-zinc-50">{programme.name}</h1>
             <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-zinc-600 dark:text-zinc-400">
@@ -192,6 +192,12 @@ export default function ProgrammeDetailPage() {
                   <div className="whitespace-pre-line text-zinc-600 dark:text-zinc-400">
                     {programme.description || "No description available."}
                   </div>
+                  {(programme.applicationDeadline || programme.applicationStatus) && (
+                    <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t border-zinc-200 pt-4 text-sm dark:border-zinc-800">
+                      {programme.applicationDeadline && <span className="text-zinc-600 dark:text-zinc-400">Application deadline: <strong className="text-zinc-900 dark:text-zinc-50">{new Date(programme.applicationDeadline).toLocaleDateString()}</strong></span>}
+                      {programme.applicationStatus && <span className="text-zinc-600 dark:text-zinc-400">Status: <strong className="text-zinc-900 dark:text-zinc-50">{programme.applicationStatus}</strong></span>}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -279,6 +285,14 @@ export default function ProgrammeDetailPage() {
 
           {activeTab === "requirements" && (
             <div className="space-y-6">
+              {programme.entryRequirements && (
+                <Card>
+                  <CardContent className="p-6">
+                    <h2 className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">Programme Admission Requirements</h2>
+                    <p className="whitespace-pre-line text-sm leading-6 text-zinc-600 dark:text-zinc-400">{programme.entryRequirements}</p>
+                  </CardContent>
+                </Card>
+              )}
               <Card>
                 <CardContent className="p-6">
                   <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">University General Requirements</h2>

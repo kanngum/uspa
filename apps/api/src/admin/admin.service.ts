@@ -182,6 +182,42 @@ export class AdminService {
     return { message: 'Programme deleted successfully' };
   }
 
+  async getCatalogueReview(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const where = { needsReview: true };
+    const [data, total] = await Promise.all([
+      this.prisma.programme.findMany({
+        where, skip, take: limit, orderBy: { name: 'asc' },
+        include: { department: { include: { academicUnit: { select: { name: true, abbreviation: true } } } }, tuition: { orderBy: { academicYear: 'desc' }, take: 1 } },
+      }),
+      this.prisma.programme.count({ where }),
+    ]);
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async resolveCatalogueReview(id: string, input: { applicationDeadline?: string; applicationStatus?: string; sourceCode?: string; feeAmount?: number; feePeriod?: string; academicYear?: string }) {
+    const current = await this.prisma.programme.findUnique({ where: { id }, include: { tuition: true } });
+    if (!current) throw new NotFoundException('Programme not found');
+    const deadline = input.applicationDeadline ? new Date(input.applicationDeadline) : current.applicationDeadline;
+    if (input.applicationDeadline && Number.isNaN(deadline?.getTime())) throw new Error('Enter a valid application deadline');
+    if (input.feeAmount !== undefined && input.feeAmount <= 0) throw new Error('Fee must be greater than zero');
+    const feeExists = input.feeAmount !== undefined || current.tuition.some((item) => Number(item.amount) > 0);
+    const notes = [!deadline && 'Missing application deadline', !feeExists && 'Missing tuition fee', input.sourceCode && /[^A-Za-z0-9/_-]/.test(input.sourceCode) && 'Source code contains non-standard characters'].filter(Boolean).join('; ') || null;
+    const status = input.applicationStatus ?? current.applicationStatus ?? 'Open';
+    const programme = await this.prisma.programme.update({
+      where: { id },
+      data: { applicationDeadline: deadline, applicationStatus: status, sourceCode: input.sourceCode ?? current.sourceCode, isActive: status !== 'Closed', needsReview: Boolean(notes), reviewNotes: notes },
+    });
+    if (input.feeAmount !== undefined) {
+      await this.prisma.tuition.upsert({
+        where: { programmeId_academicYear: { programmeId: id, academicYear: input.academicYear || programme.applicationCycle || '2026/2027' } },
+        update: { amount: input.feeAmount, feePeriod: (input.feePeriod as any) || 'UNKNOWN', currency: 'XAF' },
+        create: { programmeId: id, academicYear: input.academicYear || programme.applicationCycle || '2026/2027', amount: input.feeAmount, feePeriod: (input.feePeriod as any) || 'UNKNOWN', currency: 'XAF' },
+      });
+    }
+    return programme;
+  }
+
   // ==================== PROGRAMME CAREER/KEYWORD ASSOCIATIONS ====================
 
   async addProgrammeCareer(programmeId: string, careerId: string) {

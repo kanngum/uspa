@@ -88,6 +88,18 @@ export class AdminController {
     return { success: true, data: result };
   }
 
+  @Get('catalogue/review')
+  async getCatalogueReview(@Query('page') page?: string, @Query('limit') limit?: string) {
+    const data = await this.adminService.getCatalogueReview(page ? parseInt(page, 10) : 1, limit ? parseInt(limit, 10) : 20);
+    return { success: true, ...data };
+  }
+
+  @Patch('catalogue/review/:id')
+  async resolveCatalogueReview(@Param('id') id: string, @Body() input: any) {
+    const data = await this.adminService.resolveCatalogueReview(id, input);
+    return { success: true, data };
+  }
+
   @Post('programmes')
   async createProgramme(@Body() input: any) {
     const programme = await this.adminService.createProgramme(input);

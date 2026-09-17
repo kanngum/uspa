@@ -1,6 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProgrammesService } from '../programmes/programmes.service';
+
+export type StudentType = 'FRESHMAN' | 'DIRECT_ENTRY' | 'TRANSFER';
 
 export interface SubjectGrade {
   subjectId: string;
@@ -13,11 +15,15 @@ export interface EligibilityCheckInput {
   programmeId?: string;
   programmeCode?: string;
   level?: string;
+  universityId?: string;
+  studentType?: StudentType;
   ugDegree?: {
     degreeName: string;
     institution: string;
     graduationYear: string;
     classification: string;
+    degreeLabel?: string;
+    previousProgrammeId?: string;
   };
 }
 
@@ -67,14 +73,47 @@ export class EligibilityService {
     input: EligibilityCheckInput,
   ): Promise<EligibilityResult[]> {
     const results: EligibilityResult[] = [];
+    const studentType = input.studentType || 'FRESHMAN';
+    const isPostgraduateCheck = input.level === 'POSTGRADUATE' || input.level === 'DOCTORATE' || !!input.ugDegree;
+
+    if (!isPostgraduateCheck && studentType !== 'FRESHMAN') {
+      throw new BadRequestException(`${studentType === 'TRANSFER' ? 'Transfer' : 'Direct Entry'} eligibility is not supported by the current checker yet.`);
+    }
+
+    if (isPostgraduateCheck) {
+      if (!input.ugDegree?.degreeName || !input.ugDegree.classification) {
+        throw new BadRequestException('Previous programme and classification are required for postgraduate and doctorate checks.');
+      }
+    } else {
+      const uniqueOLevelSubjects = new Set(input.oLevelSubjects.map((subject) => subject.subjectId));
+      const uniqueALevelSubjects = new Set((input.aLevelSubjects || []).map((subject) => subject.subjectId));
+
+      if (input.oLevelSubjects.length < 4 || uniqueOLevelSubjects.size < 4) {
+        throw new BadRequestException('At least 4 unique O Level subject and grade pairs are required.');
+      }
+      if ((input.aLevelSubjects || []).length < 2 || uniqueALevelSubjects.size < 2) {
+        throw new BadRequestException('At least 2 unique A Level subject and grade pairs are required.');
+      }
+    }
 
     // Determine which programme(s) to check
     let programmeIds: string[] = [];
 
-    // Build programme filter based on level
+    // Build programme filter based on level and selected university
     const programmeFilter: any = { select: { id: true } };
+    const programmeWhere: Record<string, any> = {};
     if (input.level) {
-      programmeFilter.where = { level: input.level };
+      programmeWhere.level = input.level;
+    }
+    if (input.universityId) {
+      programmeWhere.department = {
+        academicUnit: {
+          universityId: input.universityId,
+        },
+      };
+    }
+    if (Object.keys(programmeWhere).length > 0) {
+      programmeFilter.where = programmeWhere;
     }
 
     if (input.programmeId) {
@@ -161,9 +200,12 @@ if (!programme) {
       // Check A Level minimum requirements
       if (aLevelSubjects.length < 2) {
         reasons.push({
-          type: 'warning',
-          message: `Only ${aLevelSubjects.length} A Level subjects provided. Minimum 2 recommended.`,
+          type: 'error',
+          message: `Only ${aLevelSubjects.length} A Level subjects provided. Minimum 2 required.`,
         });
+        missingRequirements.push(`${2 - aLevelSubjects.length} more A Level subject(s)`);
+      } else {
+        satisfiedRequirements.push(`${aLevelSubjects.length} A Level subjects provided`);
       }
     } else {
       // For postgraduate/doctorate, check undergraduate degree info

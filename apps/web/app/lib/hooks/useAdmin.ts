@@ -74,6 +74,18 @@ export function useDeleteProgramme() {
   });
 }
 
+export function useCatalogueReview(page = 1, limit = 20) {
+  return useQuery({ queryKey: ["admin", "catalogue-review", page, limit], queryFn: () => api.getCatalogueReview(page, limit) });
+}
+
+export function useResolveCatalogueReview() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: any }) => api.resolveCatalogueReview(id, input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "catalogue-review"] }),
+  });
+}
+
 // ==================== SUBJECTS ====================
 
 export function useAdminSubjects(page = 1, limit = 50, search?: string, level?: string) {

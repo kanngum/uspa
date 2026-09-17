@@ -154,6 +154,16 @@ class ApiClient {
     programmeId?: string;
     programmeCode?: string;
     level?: string;
+    universityId?: string;
+    studentType?: "FRESHMAN" | "DIRECT_ENTRY" | "TRANSFER";
+    ugDegree?: {
+      degreeName: string;
+      institution: string;
+      graduationYear: string;
+      classification: string;
+      degreeLabel?: string;
+      previousProgrammeId?: string;
+    };
   }) {
     return this.request<{ success: boolean; data: any }>('/eligibility/check', {
       method: 'POST',
@@ -294,6 +304,16 @@ class ApiClient {
   async deleteAdminProgramme(id: string) {
     return this.request<{ success: boolean; data: any }>(`/admin/programmes/${id}`, {
       method: 'DELETE',
+    });
+  }
+
+  async getCatalogueReview(page = 1, limit = 20) {
+    return this.request<{ success: boolean; data: any[]; total: number; page: number; totalPages: number }>(`/admin/catalogue/review?page=${page}&limit=${limit}`);
+  }
+
+  async resolveCatalogueReview(id: string, input: any) {
+    return this.request<{ success: boolean; data: any }>(`/admin/catalogue/review/${id}`, {
+      method: 'PATCH', body: JSON.stringify(input),
     });
   }
 
