@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, NotFoundException } from '@nestjs/common';
 import { AcademicUnitsService } from './academic-units.service';
 import { CreateAcademicUnitDto } from './dto/create-academic-unit.dto';
 import { UpdateAcademicUnitDto } from './dto/update-academic-unit.dto';
@@ -10,30 +10,46 @@ export class AcademicUnitsController {
   ) {}
 
   @Post()
-  create(@Body() createAcademicUnitDto: CreateAcademicUnitDto) {
-    return this.academicUnitsService.create(createAcademicUnitDto);
+  async create(@Body() createAcademicUnitDto: CreateAcademicUnitDto) {
+    const data = await this.academicUnitsService.create(createAcademicUnitDto);
+    return { success: true, data };
   }
 
   @Get()
-  findAll() {
-    return this.academicUnitsService.findAll();
+  async findAll() {
+    const data = await this.academicUnitsService.findAll();
+    return { success: true, data };
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.academicUnitsService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    const data = await this.academicUnitsService.findOne(id);
+    if (!data) {
+      throw new NotFoundException(`Academic unit with ID ${id} not found`);
+    }
+    return { success: true, data };
   }
 
   @Patch(':id')
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateAcademicUnitDto: UpdateAcademicUnitDto,
   ) {
-    return this.academicUnitsService.update(id, updateAcademicUnitDto);
+    const existing = await this.academicUnitsService.findOne(id);
+    if (!existing) {
+      throw new NotFoundException(`Academic unit with ID ${id} not found`);
+    }
+    const data = await this.academicUnitsService.update(id, updateAcademicUnitDto);
+    return { success: true, data };
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.academicUnitsService.remove(id);
+  async remove(@Param('id') id: string) {
+    const existing = await this.academicUnitsService.findOne(id);
+    if (!existing) {
+      throw new NotFoundException(`Academic unit with ID ${id} not found`);
+    }
+    const data = await this.academicUnitsService.remove(id);
+    return { success: true, data };
   }
 }

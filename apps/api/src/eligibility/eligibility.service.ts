@@ -12,12 +12,20 @@ export interface EligibilityCheckInput {
   aLevelSubjects?: SubjectGrade[];
   programmeId?: string;
   programmeCode?: string;
+  level?: string;
+  ugDegree?: {
+    degreeName: string;
+    institution: string;
+    graduationYear: string;
+    classification: string;
+  };
 }
 
 export interface EligibilityResult {
   programmeId: string;
   programmeName: string;
   programmeCode: string;
+  programmeLevel: string;
   status: 'ELIGIBLE' | 'CONDITIONALLY_ELIGIBLE' | 'NOT_ELIGIBLE';
   reasons: { type: 'success' | 'warning' | 'error'; message: string }[];
   missingRequirements: string[];
@@ -63,16 +71,20 @@ export class EligibilityService {
     // Determine which programme(s) to check
     let programmeIds: string[] = [];
 
+    // Build programme filter based on level
+    const programmeFilter: any = { select: { id: true } };
+    if (input.level) {
+      programmeFilter.where = { level: input.level };
+    }
+
     if (input.programmeId) {
       programmeIds = [input.programmeId];
     } else if (input.programmeCode) {
       const prog = await this.programmesService.findByCode(input.programmeCode);
       programmeIds = [prog.id];
     } else {
-      // Check all programmes if no specific programme is given
-      const allProgrammes = await this.prisma.programme.findMany({
-        select: { id: true },
-      });
+      // Check all programmes (optionally filtered by level)
+      const allProgrammes = await this.prisma.programme.findMany(programmeFilter);
       programmeIds = allProgrammes.map((p) => p.id);
     }
 
@@ -110,11 +122,12 @@ export class EligibilityService {
       },
     });
 
-    if (!programme) {
+if (!programme) {
       return {
         programmeId,
         programmeName: 'Unknown',
         programmeCode: '',
+        programmeLevel: '',
         status: 'NOT_ELIGIBLE',
         reasons: [{ type: 'error', message: 'Programme not found' }],
         missingRequirements: ['Programme not found'],
@@ -129,25 +142,41 @@ export class EligibilityService {
     const missingRequirements: string[] = [];
     const satisfiedRequirements: string[] = [];
 
-    // Check O Level minimum requirements
-    const oLevelCount = input.oLevelSubjects.length;
-    if (oLevelCount < 4) {
-      reasons.push({
-        type: 'error',
-        message: `Only ${oLevelCount} O Level subjects provided. Minimum 4 required.`,
-      });
-      missingRequirements.push(`${4 - oLevelCount} more O Level subject(s)`);
-    } else {
-      satisfiedRequirements.push(`${oLevelCount} O Level subjects provided`);
-    }
-
-    // Check A Level minimum requirements
+// Check O Level minimum requirements - skip for postgraduate/doctorate
+    const isPostgraduateCheck = !!input.ugDegree || programme.level === 'POSTGRADUATE' || programme.level === 'DOCTORATE';
     const aLevelSubjects = input.aLevelSubjects || [];
-    if (aLevelSubjects.length < 2) {
-      reasons.push({
-        type: 'warning',
-        message: `Only ${aLevelSubjects.length} A Level subjects provided. Minimum 2 recommended.`,
-      });
+    
+    if (!isPostgraduateCheck) {
+      const oLevelCount = input.oLevelSubjects.length;
+      if (oLevelCount < 4) {
+        reasons.push({
+          type: 'error',
+          message: `Only ${oLevelCount} O Level subjects provided. Minimum 4 required.`,
+        });
+        missingRequirements.push(`${4 - oLevelCount} more O Level subject(s)`);
+      } else {
+        satisfiedRequirements.push(`${oLevelCount} O Level subjects provided`);
+      }
+
+      // Check A Level minimum requirements
+      if (aLevelSubjects.length < 2) {
+        reasons.push({
+          type: 'warning',
+          message: `Only ${aLevelSubjects.length} A Level subjects provided. Minimum 2 recommended.`,
+        });
+      }
+    } else {
+      // For postgraduate/doctorate, check undergraduate degree info
+      if (input.ugDegree) {
+        satisfiedRequirements.push(
+          `Undergraduate degree: ${input.ugDegree.degreeName} - ${input.ugDegree.classification}`,
+        );
+      } else {
+        reasons.push({
+          type: 'warning',
+          message: 'Undergraduate degree details not fully provided.',
+        });
+      }
     }
 
     // Check each programme requirement
@@ -212,10 +241,11 @@ export class EligibilityService {
       });
     }
 
-    return {
+return {
       programmeId: programme.id,
       programmeName: programme.name,
       programmeCode: programme.code,
+      programmeLevel: programme.level,
       status,
       reasons,
       missingRequirements,

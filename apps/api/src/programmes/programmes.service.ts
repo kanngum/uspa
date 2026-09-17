@@ -8,20 +8,33 @@ export class ProgrammesService {
 
   async search(params: {
     query?: string;
+    universityId?: string;
     facultyId?: string;
     departmentId?: string;
     degreeType?: string;
     level?: string;
     career?: string;
+    minFee?: number;
+    maxFee?: number;
     page?: number;
     limit?: number;
   }) {
-    const { query, facultyId, departmentId, degreeType, level, career } =
+    const { query, universityId, facultyId, departmentId, degreeType, level, career, minFee, maxFee } =
       params;
     const page = Math.max(1, params.page || 1);
     const limit = Math.min(100, Math.max(1, params.limit || 20));
 
     const where: Prisma.ProgrammeWhereInput = {};
+
+    // University filter
+    if (universityId) {
+      where.department = {
+        ...(where.department as any || {}),
+        academicUnit: {
+          universityId,
+        },
+      };
+    }
 
     // Text search across name, code, description and keywords
     if (query && query.trim().length > 0) {
@@ -80,6 +93,16 @@ export class ProgrammesService {
           career: {
             name: { contains: career, mode: 'insensitive' },
           },
+        },
+      };
+    }
+
+    // Tuition/fee range filter
+    if (minFee !== undefined || maxFee !== undefined) {
+      where.tuition = {
+        some: {
+          ...(minFee !== undefined && { amount: { gte: minFee } }),
+          ...(maxFee !== undefined && { amount: { lte: maxFee } }),
         },
       };
     }
@@ -190,8 +213,18 @@ export class ProgrammesService {
     return programme;
   }
 
-  async getFeatured() {
+  async getFeatured(universityId?: string) {
+    const where: Prisma.ProgrammeWhereInput = {};
+    if (universityId) {
+      where.department = {
+        academicUnit: {
+          universityId,
+        },
+      };
+    }
+
     return this.prisma.programme.findMany({
+      where,
       take: 8,
       include: {
         department: {

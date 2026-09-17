@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Search, Menu, X, GraduationCap, Heart, User, BookOpen, Building2, Bot, Sun, Moon, LogOut } from "lucide-react";
+import { Search, Menu, X, GraduationCap, Heart, User, BookOpen, Building2, Bot, Sun, Moon, LogOut, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/app/lib/utils";
 import { useTheme } from "@/components/providers/theme-provider";
 import { useAuth } from "@/app/lib/hooks/useAuth";
+import { useUniversity } from "@/app/lib/context/UniversityContext";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -14,6 +15,7 @@ export function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const { resolvedTheme, toggleTheme } = useTheme();
   const { isAuthenticated, isLoading, profile, logout } = useAuth();
+  const { selectedUniversity, setShowSelector } = useUniversity();
 
   const navItems = [
     { href: "/programmes", label: "Programmes", icon: BookOpen },
@@ -42,6 +44,16 @@ export function Header() {
             <span className="text-lg font-bold text-zinc-900 dark:text-zinc-50">USPA</span>
             <span className="ml-1.5 text-xs text-zinc-500 dark:text-zinc-400">Smart Advisor</span>
           </div>
+          {selectedUniversity && (
+            <button
+              onClick={() => setShowSelector(true)}
+              className="ml-2 hidden items-center gap-1 rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 sm:flex"
+            >
+              <Building2 className="h-3 w-3" />
+              {selectedUniversity.abbreviation}
+              <ChevronDown className="h-2.5 w-2.5" />
+            </button>
+          )}
         </Link>
 
         {/* Desktop Nav */}

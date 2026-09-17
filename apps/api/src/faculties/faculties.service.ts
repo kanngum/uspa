@@ -10,8 +10,9 @@ export class FacultiesService {
     limit?: number;
     search?: string;
     type?: string;
+    universityId?: string;
   }) {
-    if (!params || (!params.page && !params.search && !params.type)) {
+    if (!params || (!params.page && !params.search && !params.type && !params.universityId)) {
       // Simple list (backward compatible)
       return this.prisma.academicUnit.findMany({
         include: {

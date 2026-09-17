@@ -443,6 +443,32 @@ export class AdminService {
     return { message: 'Subject deleted successfully' };
   }
 
+  // ==================== UNIVERSITY MANAGEMENT ====================
+
+  async createUniversity(input: { name: string; abbreviation: string; description?: string; website?: string }) {
+    const existing = await this.prisma.university.findUnique({ where: { abbreviation: input.abbreviation } });
+    if (existing) throw new Error(`University with abbreviation "${input.abbreviation}" already exists`);
+
+    return this.prisma.university.create({ data: input });
+  }
+
+  async updateUniversity(id: string, input: { name?: string; abbreviation?: string; description?: string; website?: string }) {
+    const university = await this.prisma.university.findUnique({ where: { id } });
+    if (!university) throw new NotFoundException('University not found');
+    return this.prisma.university.update({ where: { id }, data: input });
+  }
+
+  async deleteUniversity(id: string) {
+    const university = await this.prisma.university.findUnique({ where: { id } });
+    if (!university) throw new NotFoundException('University not found');
+
+    const unitCount = await this.prisma.academicUnit.count({ where: { universityId: id } });
+    if (unitCount > 0) throw new Error(`Cannot delete "${university.name}" - it has ${unitCount} academic unit(s)`);
+
+    await this.prisma.university.delete({ where: { id } });
+    return { message: 'University deleted successfully' };
+  }
+
   // ==================== FACULTY/DEPARTMENT MANAGEMENT ====================
 
   async createFaculty(input: {
@@ -522,6 +548,42 @@ export class AdminService {
     }
     await this.prisma.department.delete({ where: { id } });
     return { message: 'Department deleted successfully' };
+  }
+
+  async getAllDepartments(page: number = 1, limit: number = 200, search?: string) {
+    const skip = (page - 1) * limit;
+    const where: any = {};
+
+    if (search?.trim()) {
+      where.OR = [
+        { name: { contains: search.trim(), mode: 'insensitive' } },
+        { abbreviation: { contains: search.trim(), mode: 'insensitive' } },
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.department.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          academicUnit: {
+            select: { id: true, name: true, abbreviation: true },
+          },
+          _count: { select: { programmes: true } },
+        },
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.department.count({ where }),
+    ]);
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   // ==================== TUITION MANAGEMENT ====================

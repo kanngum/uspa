@@ -16,6 +16,7 @@ import { CompareModule } from './compare/compare.module';
 import { AdminModule } from './admin/admin.module';
 import { AcademicUnitsModule } from './academic-units/academic-units.module';
 import { ImportModule } from './import/import.module';
+import { UniversitiesModule } from './universities/universities.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { ImportModule } from './import/import.module';
     AdminModule,
     AcademicUnitsModule,
     ImportModule,
+    UniversitiesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

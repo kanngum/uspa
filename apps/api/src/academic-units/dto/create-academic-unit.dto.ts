@@ -13,8 +13,8 @@ export class CreateAcademicUnitDto {
   name: string;
 
   @IsString()
-  @IsNotEmpty()
-  code: string;
+  @IsOptional()
+  abbreviation?: string;
 
   @IsEnum(AcademicUnitType)
   type: AcademicUnitType;

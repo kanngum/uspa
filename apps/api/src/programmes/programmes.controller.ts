@@ -17,21 +17,27 @@ export class ProgrammesController {
   @Get()
   async search(
     @Query('query') query?: string,
+    @Query('universityId') universityId?: string,
     @Query('facultyId') facultyId?: string,
     @Query('departmentId') departmentId?: string,
     @Query('degreeType') degreeType?: string,
     @Query('level') level?: string,
     @Query('career') career?: string,
+    @Query('minFee') minFee?: string,
+    @Query('maxFee') maxFee?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
     const result = await this.programmesService.search({
       query,
+      universityId,
       facultyId,
       departmentId,
       degreeType,
       level,
       career,
+      minFee: minFee ? parseInt(minFee, 10) : undefined,
+      maxFee: maxFee ? parseInt(maxFee, 10) : undefined,
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 20,
     });
@@ -39,8 +45,8 @@ export class ProgrammesController {
   }
 
   @Get('featured')
-  async getFeatured() {
-    const programmes = await this.programmesService.getFeatured();
+  async getFeatured(@Query('universityId') universityId?: string) {
+    const programmes = await this.programmesService.getFeatured(universityId);
     return { success: true, data: programmes };
   }
 

@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   ForbiddenException,
+  ConflictException,
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -20,8 +21,59 @@ export class AuthService {
   ) {}
 
   /**
-   * Login is restricted to admin users only.
-   * Only users with ADMIN or SUPER_ADMIN role can log in.
+   * Register a new user account (STUDENT role by default)
+   */
+  async register(input: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+  }) {
+    const email = input.email.toLowerCase().trim();
+
+    // Check if email already exists
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
+    if (existingUser) {
+      throw new ConflictException(
+        'An account with this email already exists',
+      );
+    }
+
+    // Hash password
+    const saltRounds = 12;
+    const passwordHash = await bcrypt.hash(input.password, saltRounds);
+
+    // Create user with STUDENT role
+    const user = await this.prisma.user.create({
+      data: {
+        email,
+        passwordHash,
+        firstName: input.firstName.trim(),
+        lastName: input.lastName.trim(),
+        role: 'STUDENT',
+        isActive: true,
+      },
+    });
+
+    // Generate token for auto-login after registration
+    const token = this.generateToken(user.id, user.email, user.role);
+
+    return {
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+      },
+    };
+  }
+
+  /**
+   * Login - allows all active users (STUDENT, ADMIN, etc.)
    */
   async login(input: { email: string; password: string }) {
     const user = await this.prisma.user.findUnique({
@@ -34,13 +86,6 @@ export class AuthService {
 
     if (!user.isActive) {
       throw new UnauthorizedException('Account is deactivated');
-    }
-
-    // Restrict login to admin roles only
-    if (!ADMIN_ROLES.includes(user.role)) {
-      throw new ForbiddenException(
-        'Access denied. Only administrators can access this system.',
-      );
     }
 
     const isValid = await bcrypt.compare(input.password, user.passwordHash);

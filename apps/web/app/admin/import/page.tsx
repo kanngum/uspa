@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import { useAuth } from "@/app/lib/hooks/useAuth";
 import { useImportValidate, useImportConfirm } from "@/app/lib/hooks/useAdmin";
 
 type ImportStep = "input" | "preview" | "result";
@@ -29,6 +30,7 @@ export default function AdminImportPage() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
+  const { isAuthenticated } = useAuth();
   const validateMutation = useImportValidate();
   const confirmMutation = useImportConfirm();
 
@@ -68,9 +70,10 @@ export default function AdminImportPage() {
     setLoading(true);
     try {
       const res = await validateMutation.mutateAsync({ type: importType, data: parsedData });
-      setValidationResult(res.data || res);
+      const payload = res.data || res;
+      setValidationResult(payload);
       setStep("preview");
-      const vr = (res.data?.validRows || res.validRows || 0);
+      const vr = payload?.validRows || 0;
       showToast("success", "Validation complete: " + vr + " valid rows");
     } catch (err: any) {
       showToast("error", err.message);
@@ -102,6 +105,25 @@ export default function AdminImportPage() {
 
   const currentType = IMPORT_TYPES.find(t => t.value === importType);
 
+  if (!isAuthenticated) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Authentication Required</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm text-zinc-600 dark:text-zinc-300">
+            <p>You must be logged in as an admin to use the data import tool.</p>
+            <div className="flex gap-2">
+              <Link href="/login"><Button>Login</Button></Link>
+              <Link href="/admin"><Button variant="outline">Back to Admin</Button></Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       {toast && (
@@ -122,6 +144,7 @@ export default function AdminImportPage() {
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Data Import</h1>
             <p className="text-sm text-zinc-500 dark:text-zinc-400">Bulk import data from JSON files - validate, preview, then confirm</p>
           </div>
+        </div>
       </div>
       <div className="mb-6 flex items-center gap-2">
         {(["input", "preview", "result"] as const).map((s, i) => (
@@ -199,6 +222,7 @@ export default function AdminImportPage() {
                     <p key={i} className="text-xs text-red-600 dark:text-red-300">Row {err.row}: <strong>{err.field}</strong> - {err.message}</p>
                   ))}
                 </div>
+              </div>
             )}
             <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
               <table className="w-full text-sm">
@@ -257,6 +281,7 @@ export default function AdminImportPage() {
                 <p className="text-2xl font-bold text-red-600">{importResult.errors?.length || 0}</p>
                 <p className="text-xs text-red-700 dark:text-red-400">Errors</p>
               </div>
+            </div>
             {importResult.errors?.length > 0 && (
               <div className="mx-auto mb-6 max-w-lg text-left">
                 <p className="mb-2 text-sm font-medium text-red-600">Error Details:</p>
@@ -265,6 +290,7 @@ export default function AdminImportPage() {
                     <p key={i} className="text-xs text-red-600 dark:text-red-300">&bull; {err.item}: {err.reason}</p>
                   ))}
                 </div>
+              </div>
             )}
             <div className="flex justify-center gap-3">
               <Button onClick={handleReset} className="gap-1 bg-[#0FA3B1] hover:bg-[#0C8793] text-white">

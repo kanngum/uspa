@@ -14,11 +14,7 @@ import { useProgramme } from "@/app/lib/hooks/useProgrammes";
 import { useSimilarProgrammes } from "@/app/lib/hooks/useRecommendations";
 import { useAddFavourite, useRemoveFavourite, useFavourites } from "@/app/lib/hooks/useFavourites";
 
-const oLevelGeneral = [
-  { subject: "English Language", grade: "C6" },
-  { subject: "Mathematics", grade: "C6" },
-  { subject: "Any Science Subject", grade: "C6" },
-];
+
 
 export default function ProgrammeDetailPage() {
   const params = useParams();
@@ -109,7 +105,10 @@ export default function ProgrammeDetailPage() {
   const facultyName = faculty?.name || "N/A";
   const facultyAbb = faculty?.abbreviation || "";
   const requirements = programme.requirements || [];
+  const oLevelReqs = requirements.filter((r: any) => r.subject?.level === "O_LEVEL");
+  const aLevelReqs = requirements.filter((r: any) => r.subject?.level === "A_LEVEL");
   const tuitionData = programme.tuition || [];
+  const latestTuition = tuitionData.length > 0 ? tuitionData[0] : null;
   const careersData = programme.careers?.map((c: any) => c.career?.name || c.name) || [];
 
   return (
@@ -147,7 +146,7 @@ export default function ProgrammeDetailPage() {
 
           {/* Action Buttons */}
           <div className="mb-6 flex flex-wrap gap-2">
-            <Link href={`/admission-checker?programme=${programme.code}`}>
+<Link href={`/admission-checker?programme=${programme.code}&level=${programme.level}`}>
               <Button variant="primary">
                 <GraduationCap className="mr-1.5 h-4 w-4" /> Check Eligibility
               </Button>
@@ -199,27 +198,55 @@ export default function ProgrammeDetailPage() {
               <Card>
                 <CardContent className="p-6">
                   <h2 className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">O Level Requirements</h2>
-                  <div className="space-y-2">
-                    {oLevelGeneral.map((req, i) => (
-                      <div key={i} className="flex items-center justify-between rounded-lg bg-zinc-50 p-3 dark:bg-zinc-900">
-                        <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{req.subject}</span>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="warning">REQUIRED</Badge>
-                          <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Min: {req.grade}</span>
-                        </div>
+                  {oLevelReqs.length > 0 ? (
+                    <>
+                      <div className="space-y-2">
+                        {oLevelReqs.map((req: any, i: number) => {
+                          const subjectName = req.subject?.name || req.subject || "Unknown";
+                          const minGrade = req.minimumGrade || req.grade || "N/A";
+                          const reqType = req.requirementType || req.type || "REQUIRED";
+                          return (
+                            <div key={i} className="flex items-center justify-between rounded-lg bg-zinc-50 p-3 dark:bg-zinc-900">
+                              <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{subjectName}</span>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={reqType === "REQUIRED" ? "destructive" : "warning"}>{reqType}</Badge>
+                                <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Min: {minGrade}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    ))}
-                  </div>
-                  <p className="mt-3 text-xs text-zinc-500">At least four (4) O Level credits including English and Mathematics</p>
+                      <p className="mt-3 text-xs text-zinc-500">At least four (4) O Level credits including English and Mathematics</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="space-y-2">
+                        {[
+                          { subject: "English Language", grade: "C6" },
+                          { subject: "Mathematics", grade: "C6" },
+                          { subject: "Any Science Subject", grade: "C6" },
+                        ].map((req, i) => (
+                          <div key={i} className="flex items-center justify-between rounded-lg bg-zinc-50 p-3 dark:bg-zinc-900">
+                            <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{req.subject}</span>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="warning">REQUIRED</Badge>
+                              <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Min: {req.grade}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="mt-3 text-xs text-zinc-500">At least four (4) O Level credits including English and Mathematics</p>
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
               <Card>
                 <CardContent className="p-6">
                   <h2 className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">A Level Subject Requirements</h2>
-                  {requirements.length > 0 ? (
+                  {aLevelReqs.length > 0 ? (
                     <div className="space-y-2">
-                      {requirements.map((req: any, i: number) => {
+                      {aLevelReqs.map((req: any, i: number) => {
                         const subjectName = req.subject?.name || req.subject || "Unknown";
                         const minGrade = req.minimumGrade || req.grade || "N/A";
                         const reqType = req.requirementType || req.type || "REQUIRED";
@@ -271,7 +298,45 @@ export default function ProgrammeDetailPage() {
                 </CardContent>
               </Card>
 
-              {requirements.length > 0 && (
+              {oLevelReqs.length > 0 && (
+                <Card>
+                  <CardContent className="p-6">
+                    <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">Programme-Specific O Level Requirements</h2>
+                    <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
+                      The following O Level subjects are required for this programme:
+                    </p>
+                    <div className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800">
+                      <table className="w-full text-sm">
+                        <thead className="bg-zinc-50 dark:bg-zinc-900">
+                          <tr>
+                            <th className="px-4 py-3 text-left font-medium text-zinc-900 dark:text-zinc-50">Subject</th>
+                            <th className="px-4 py-3 text-left font-medium text-zinc-900 dark:text-zinc-50">Minimum Grade</th>
+                            <th className="px-4 py-3 text-left font-medium text-zinc-900 dark:text-zinc-50">Type</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                          {oLevelReqs.map((req: any, i: number) => {
+                            const subjectName = req.subject?.name || req.subject || "Unknown";
+                            const minGrade = req.minimumGrade || req.grade || "N/A";
+                            const reqType = req.requirementType || req.type || "REQUIRED";
+                            return (
+                              <tr key={i} className="bg-white dark:bg-zinc-950">
+                                <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-50">{subjectName}</td>
+                                <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">{minGrade}</td>
+                                <td className="px-4 py-3">
+                                  <Badge variant={reqType === "REQUIRED" ? "destructive" : "warning"}>{reqType}</Badge>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {aLevelReqs.length > 0 && (
                 <Card>
                   <CardContent className="p-6">
                     <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">Programme-Specific A Level Requirements</h2>
@@ -288,7 +353,7 @@ export default function ProgrammeDetailPage() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                          {requirements.map((req: any, i: number) => {
+                          {aLevelReqs.map((req: any, i: number) => {
                             const subjectName = req.subject?.name || req.subject || "Unknown";
                             const minGrade = req.minimumGrade || req.grade || "N/A";
                             const reqType = req.requirementType || req.type || "REQUIRED";
@@ -434,6 +499,7 @@ export default function ProgrammeDetailPage() {
                 { label: "Duration", value: `${programme.duration} years` },
                 { label: "Faculty", value: facultyName },
                 { label: "Department", value: deptName },
+                { label: "Tuition", value: latestTuition ? `${Number(latestTuition.amount).toLocaleString()} FCFA` : "N/A" },
               ].map((item) => (
                 <div key={item.label} className="flex justify-between text-sm">
                   <span className="text-zinc-500 dark:text-zinc-400">{item.label}</span>

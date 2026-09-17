@@ -15,11 +15,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const { addToast } = useToast();
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, profile } = useAuth();
 
   // Redirect if already logged in
   if (isAuthenticated) {
-    router.push("/");
+    const destination = profile?.role === 'ADMIN' ? '/admin' : '/';
+    router.push(destination);
     return null;
   }
 
@@ -33,9 +34,10 @@ export default function LoginPage() {
     login.mutate(
       { email, password },
       {
-        onSuccess: () => {
+        onSuccess: (data: any) => {
           addToast("Welcome back!", "success");
-          router.push("/");
+          const destination = data?.data?.user?.role === 'ADMIN' ? '/admin' : '/';
+          router.push(destination);
         },
         onError: (error: any) => {
           addToast(error?.message || "Invalid email or password", "error");

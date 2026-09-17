@@ -18,6 +18,16 @@ interface EligibilityInput {
   aLevelSubjects?: SubjectGrade[];
   programmeId?: string;
   programmeCode?: string;
+  level?: string;
+}
+
+interface UgDegreeInfo {
+  degreeName: string;
+  institution: string;
+  graduationYear: string;
+  classification: string;
+  degreeLabel?: string;
+  previousProgrammeId?: string;
 }
 
 function transformResults(rawResults: any[]): {
@@ -37,6 +47,7 @@ function transformResults(rawResults: any[]): {
       id: r.programmeId,
       name: r.programmeName,
       code: r.programmeCode,
+      level: r.programmeLevel,
       matchScore: r.status === 'ELIGIBLE' ? 90 : r.status === 'CONDITIONALLY_ELIGIBLE' ? 60 : 30,
       missingRequirements: r.missingRequirements || [],
       satisfiedRequirements: r.satisfiedRequirements || [],
@@ -64,18 +75,37 @@ function transformResults(rawResults: any[]): {
 
 export function useCheckEligibility() {
   return useMutation({
-    mutationFn: async (input: { oLevelSubjects: SubjectGradeByName[]; aLevelSubjects?: SubjectGradeByName[]; programmeId?: string; programmeCode?: string }) => {
+    mutationFn: async (input: { oLevelSubjects: SubjectGradeByName[]; aLevelSubjects?: SubjectGradeByName[]; programmeId?: string; programmeCode?: string; level?: string; ugDegree?: UgDegreeInfo }) => {
+      // For postgraduate level checks, skip subject resolution and use degree info
+      if (input.ugDegree) {
+        const payload: EligibilityInput = {
+          oLevelSubjects: [],
+          aLevelSubjects: [],
+          programmeId: input.programmeId,
+          programmeCode: input.programmeCode,
+          level: input.level,
+        };
+
+        const response: any = await api.checkEligibility(payload);
+        const rawResults = response?.data || [];
+        return transformResults(rawResults);
+      }
+
       // Resolve subject names to IDs
       const allSubjects = [...input.oLevelSubjects, ...(input.aLevelSubjects || [])];
-      const uniqueNames = [...new Set(allSubjects.map(s => s.name))];
-      
+      const uniqueNames = [...new Set(allSubjects.map((s) => s.name.trim().toLowerCase()))];
+
       // Fetch subjects to map names to IDs
-      const subjectsData = await api.getSubjects({ limit: 100 });
+      const subjectsData = await api.getSubjects({ limit: 1000 });
       const subjects = subjectsData?.data || [];
-      const nameToId = new Map(subjects.map((s: any) => [s.name.toLowerCase(), s.id]));
-      
+      const nameToId = new Map(subjects.map((s: any) => [s.name.trim().toLowerCase(), s.id]));
+
       const mapSubject = (s: SubjectGradeByName): SubjectGrade => {
-        const subjectId = nameToId.get(s.name.toLowerCase()) || s.name;
+        const normalized = s.name.trim().toLowerCase();
+        const subjectId = nameToId.get(normalized);
+        if (!subjectId) {
+          throw new Error(`Subject not found: ${s.name}`);
+        }
         return { subjectId, grade: s.grade };
       };
 
@@ -84,6 +114,7 @@ export function useCheckEligibility() {
         aLevelSubjects: input.aLevelSubjects?.map(mapSubject),
         programmeId: input.programmeId,
         programmeCode: input.programmeCode,
+        level: input.level,
       };
 
       const response: any = await api.checkEligibility(payload);

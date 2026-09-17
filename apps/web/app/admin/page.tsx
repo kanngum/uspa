@@ -20,6 +20,7 @@ import {
   useAdminTuition, useCreateTuition, useUpdateTuition, useDeleteTuition,
   useAdminCareers, useCreateCareer, useUpdateCareer, useDeleteCareer,
   useAdminKeywords, useCreateKeyword, useUpdateKeyword, useDeleteKeyword,
+  useAdminDepartments,
   useAdminAdmissionRules, useCreateAdmissionRule, useUpdateAdmissionRule, useDeleteAdmissionRule,
   useAdminAnnouncements, useCreateAnnouncement, useToggleAnnouncement, useDeleteAnnouncement,
   useDuplicateFaculties, useDuplicateProgrammes, useDuplicateSubjects,
@@ -253,6 +254,7 @@ function DashboardTab({ stats, statsLoading, facultiesData, popularSearches }: a
 // ==================== PROGRAMMES TAB ====================
 function ProgrammesTab({ page, setPage, search, setSearch, showToast }: any) {
   const { data, isLoading } = useAdminProgrammes(page, 20, search || undefined);
+  const { data: departmentsData } = useAdminDepartments(1, 200);
   const createMutation = useCreateProgramme();
   const updateMutation = useUpdateProgramme();
   const deleteMutation = useDeleteProgramme();
@@ -308,6 +310,11 @@ function ProgrammesTab({ page, setPage, search, setSearch, showToast }: any) {
     if (Array.isArray(data)) return data;
     return [];
   }, [data]);
+
+  const departments = useMemo(() => {
+    const d = departmentsData?.data || departmentsData;
+    return Array.isArray(d) ? d : [];
+  }, [departmentsData]);
 
   const totalPages = data?.totalPages || 1;
 
@@ -417,6 +424,18 @@ function ProgrammesTab({ page, setPage, search, setSearch, showToast }: any) {
                   ))}
                 </select>
               </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Department *</label>
+              <select value={form.departmentId} onChange={(e) => setForm({ ...form, departmentId: e.target.value })}
+                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50">
+                <option value="">Select department...</option>
+                {departments.map((dept: any) => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.name} {dept.academicUnit ? `(${dept.academicUnit.abbreviation || dept.academicUnit.name})` : ''}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Duration (years)</label>
@@ -1200,7 +1219,7 @@ function RequirementsTab({ showToast }: any) {
   }, [subjectsData]);
 
   const requirements = useMemo(() => {
-    const d = reqsData?.data?.requirements || reqsData?.requirements;
+    const d = reqsData?.data?.requirements || [];
     return Array.isArray(d) ? d : [];
   }, [reqsData]);
 

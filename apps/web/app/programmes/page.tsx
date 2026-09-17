@@ -13,6 +13,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { useSearchProgrammes } from "@/app/lib/hooks/useProgrammes";
 import { useFaculties } from "@/app/lib/hooks/useFaculties";
+import { useUniversity } from "@/app/lib/context/UniversityContext";
 
 const degreeOptions = [
   { value: "BSC", label: "BSc" },
@@ -46,14 +47,20 @@ function ProgrammesContent() {
     level: "",
     faculty: "",
     sortBy: "name",
+    minFee: "",
+    maxFee: "",
   });
 
+  const { selectedUniversity } = useUniversity();
   const { data: facultiesData } = useFaculties();
   const { data: programmesData, isLoading, isError } = useSearchProgrammes({
     query: debouncedQuery || undefined,
+    universityId: selectedUniversity?.id || undefined,
     degreeType: filters.degree || undefined,
     level: filters.level || undefined,
     facultyId: filters.faculty || undefined,
+    minFee: filters.minFee ? Number(filters.minFee) : undefined,
+    maxFee: filters.maxFee ? Number(filters.maxFee) : undefined,
     page,
     limit: 12,
   });
@@ -98,7 +105,7 @@ function ProgrammesContent() {
   }, [programmes, filters.sortBy]);
 
   const handleClearFilters = () => {
-    setFilters({ degree: "", level: "", faculty: "", sortBy: "name" });
+    setFilters({ degree: "", level: "", faculty: "", sortBy: "name", minFee: "", maxFee: "" });
     setQuery("");
     setDebouncedQuery("");
     setPage(1);
@@ -115,7 +122,7 @@ function ProgrammesContent() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">Programmes</h1>
         <p className="mt-1 text-zinc-600 dark:text-zinc-400">
-          Browse all programmes offered at the University of Bamenda
+Browse all programmes offered across faculties and schools
         </p>
       </div>
 
@@ -171,14 +178,12 @@ function ProgrammesContent() {
                 <label className="mb-1.5 block text-xs font-medium text-zinc-500">Faculty</label>
                 <Select
                   options={[
-                    { value: "science", label: "Faculty of Science" },
-                    { value: "arts", label: "Faculty of Arts" },
-                    { value: "eng", label: "Faculty of Engineering & Technology" },
-                    { value: "health", label: "Faculty of Health Sciences" },
+                    { value: "all", label: "All Faculties" },
+                    ...facultyOptions,
                   ]}
                   placeholder="All Faculties"
                   value={filters.faculty}
-                  onChange={(e) => setFilters({ ...filters, faculty: e.target.value })}
+                  onChange={(e) => setFilters({ ...filters, faculty: e.target.value === "all" ? "" : e.target.value })}
                 />
               </div>
               <div>
@@ -195,11 +200,34 @@ function ProgrammesContent() {
                 />
               </div>
             </div>
+            {/* Tuition Fee Range Filter */}
+            <div className="mt-4 border-t border-zinc-100 pt-4 dark:border-zinc-700">
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-medium text-zinc-500">Tuition Fee (XAF):</label>
+              </div>
+              <div className="mt-2 flex items-center gap-3">
+                <input
+                  type="number"
+                  placeholder="Min fee"
+                  value={filters.minFee}
+                  onChange={(e) => setFilters({ ...filters, minFee: e.target.value })}
+                  className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:border-[#1B2A4A] focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                />
+                <span className="text-zinc-400">to</span>
+                <input
+                  type="number"
+                  placeholder="Max fee"
+                  value={filters.maxFee}
+                  onChange={(e) => setFilters({ ...filters, maxFee: e.target.value })}
+                  className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:border-[#1B2A4A] focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                />
+              </div>
+            </div>
             <div className="mt-3 flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setFilters({ degree: "", level: "", faculty: "", sortBy: "name" })}>
+              <Button variant="ghost" size="sm" onClick={() => setFilters({ degree: "", level: "", faculty: "", sortBy: "name", minFee: "", maxFee: "" })}>
                 Clear Filters
               </Button>
-              <Button size="sm">Apply Filters</Button>
+              <Button size="sm" onClick={handleApplyFilters}>Apply Filters</Button>
             </div>
           </div>
         )}

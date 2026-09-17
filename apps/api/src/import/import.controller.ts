@@ -38,5 +38,17 @@ export class ImportController {
     const result = await this.importService.confirm(input.type, input.data);
     return { success: true, data: result };
   }
+
+  @Post('upload')
+  async uploadData(@Body() input: { data: any }) {
+    const result = await this.importService.upload(input.data);
+    return { success: true, data: result };
+  }
+
+  @Post('quick')
+  async quickImport(@Body() input: { type: string; data: any[] }) {
+    const result = await this.importService.quick(input.type, input.data);
+    return { success: true, data: result };
+  }
 }
 

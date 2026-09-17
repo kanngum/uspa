@@ -4,10 +4,9 @@
 
 // --- Enums ---
 export enum UserRole {
+  VISITOR = 'VISITOR',
   STUDENT = 'STUDENT',
-  FACULTY_ADMIN = 'FACULTY_ADMIN',
-  ADMISSIONS_OFFICER = 'ADMISSIONS_OFFICER',
-  SUPER_ADMIN = 'SUPER_ADMIN',
+  ADMIN = 'ADMIN',
 }
 
 export enum AcademicUnitType {

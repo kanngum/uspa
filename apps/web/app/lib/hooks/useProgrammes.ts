@@ -5,10 +5,13 @@ import { api } from "@/app/lib/api";
 
 interface SearchParams {
   query?: string;
+  universityId?: string;
   facultyId?: string;
   departmentId?: string;
   degreeType?: string;
   level?: string;
+  minFee?: number;
+  maxFee?: number;
   page?: number;
   limit?: number;
 }
@@ -44,10 +47,10 @@ export function useAutoComplete(query: string) {
   });
 }
 
-export function useFeaturedProgrammes() {
+export function useFeaturedProgrammes(universityId?: string) {
   return useQuery({
-    queryKey: ["programmes", "featured"],
-    queryFn: () => api.getFeaturedProgrammes(),
+    queryKey: ["programmes", "featured", universityId],
+    queryFn: () => api.getFeaturedProgrammes(universityId),
   });
 }
 

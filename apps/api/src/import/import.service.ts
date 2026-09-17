@@ -74,6 +74,76 @@ export class ImportService {
     }
   }
 
+  async upload(data: any): Promise<ImportValidationResult> {
+    if (!data) {
+      throw new BadRequestException('No data provided for upload');
+    }
+
+    const rows = Array.isArray(data)
+      ? data
+      : Object.values(data).find((value) => Array.isArray(value));
+
+    if (!Array.isArray(rows)) {
+      throw new BadRequestException('Upload payload must contain an array of records');
+    }
+
+    const type = this.detectImportType(rows);
+    if (!type) {
+      throw new BadRequestException(
+        'Unable to detect import type. Provide a top-level array of objects for faculties, departments, programmes, subjects, requirements, tuition, or careers.',
+      );
+    }
+
+    return this.validate(type, rows);
+  }
+
+  async quick(type: string, data: any[]): Promise<ImportSummary> {
+    const validation = await this.validate(type, data);
+    if (!validation.valid) {
+      throw new BadRequestException(
+        `Import validation failed: ${validation.errors.map((e) => `${e.field}: ${e.message}`).join(', ')}`,
+      );
+    }
+    return this.confirm(type, data);
+  }
+
+  private detectImportType(data: any[]): string | null {
+    if (!Array.isArray(data) || data.length === 0) {
+      return null;
+    }
+
+    const sample = data[0];
+
+    if (sample.programmeId && sample.academicYear && sample.amount) {
+      return 'tuition';
+    }
+
+    if (sample.programmeId || sample.programmeCode) {
+      if (sample.subjectId || sample.requirementType) {
+        return 'requirements';
+      }
+      return 'programmes';
+    }
+
+    if (sample.departmentId || sample.departmentName || sample.facultyName) {
+      return 'departments';
+    }
+
+    if (sample.name && sample.level && !sample.degree) {
+      return 'subjects';
+    }
+
+    if (sample.name && sample.description && !sample.code) {
+      return 'careers';
+    }
+
+    if (sample.name && (sample.abbreviation || sample.type)) {
+      return 'faculties';
+    }
+
+    return null;
+  }
+
   // ==================== FACULTIES ====================
 
   private async validateFaculties(data: any[]): Promise<ImportValidationResult> {

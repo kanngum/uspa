@@ -37,22 +37,28 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      ...options,
-      headers,
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${this.baseUrl}${endpoint}`, {
+        ...options,
+        headers,
+      });
+    } catch (err: any) {
+      throw new Error(`Request failed for ${endpoint}: ${err.message}`);
+    }
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.message || `HTTP ${response.status}`);
+      throw new Error(error.message || `HTTP ${response.status} ${response.statusText}`);
     }
 
     return response.json();
   }
 
   // Faculties
-  async getFaculties() {
-    return this.request<{ success: boolean; data: any[] }>('/faculties');
+  async getFaculties(universityId?: string) {
+    const params = universityId ? `?universityId=${encodeURIComponent(universityId)}` : '';
+    return this.request<{ success: boolean; data: any[] }>(`/faculties${params}`);
   }
 
   async getFaculty(idOrCode: string) {
@@ -73,10 +79,13 @@ class ApiClient {
   // Programmes
   async searchProgrammes(params: {
     query?: string;
+    universityId?: string;
     facultyId?: string;
     departmentId?: string;
     degreeType?: string;
     level?: string;
+    minFee?: number;
+    maxFee?: number;
     page?: number;
     limit?: number;
   }) {
@@ -99,8 +108,9 @@ class ApiClient {
     return this.request<{ success: boolean; data: any }>(`/programmes/code/${code}`);
   }
 
-  async getFeaturedProgrammes() {
-    return this.request<{ success: boolean; data: any[] }>('/programmes/featured');
+  async getFeaturedProgrammes(universityId?: string) {
+    const params = universityId ? `?universityId=${encodeURIComponent(universityId)}` : '';
+    return this.request<{ success: boolean; data: any[] }>(`/programmes/featured${params}`);
   }
 
   // Auth - Register
@@ -137,12 +147,13 @@ class ApiClient {
     return this.request<{ success: boolean; data: any[] }>(`/subjects/by-level/${level}`);
   }
 
-  // Eligibility
+// Eligibility
   async checkEligibility(input: {
     oLevelSubjects: Array<{ subjectId: string; grade: string }>;
     aLevelSubjects?: Array<{ subjectId: string; grade: string }>;
     programmeId?: string;
     programmeCode?: string;
+    level?: string;
   }) {
     return this.request<{ success: boolean; data: any }>('/eligibility/check', {
       method: 'POST',
@@ -183,6 +194,15 @@ class ApiClient {
     return this.request<{ success: boolean; data: any[] }>(
       `/recommendations/subjects?${searchParams.toString()}`,
     );
+  }
+
+  // Universities
+  async getUniversities() {
+    return this.request<{ success: boolean; data: any[] }>('/universities');
+  }
+
+  async getUniversity(id: string) {
+    return this.request<{ success: boolean; data: any }>(`/universities/${id}`);
   }
 
   // AI Advisor
@@ -308,6 +328,14 @@ class ApiClient {
     );
   }
 
+  async getAdminDepartments(page = 1, limit = 200, search?: string) {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (search) params.set('search', search);
+    return this.request<{ success: boolean; data: any[]; total: number; page: number; limit: number; totalPages: number }>(
+      `/admin/departments?${params.toString()}`,
+    );
+  }
+
   async createAdminSubject(input: { name: string; code?: string; level: string }) {
     return this.request<{ success: boolean; data: any }>('/admin/subjects', {
       method: 'POST',
@@ -424,6 +452,27 @@ class ApiClient {
 
   async deleteAdminCareer(id: string) {
     return this.request<{ success: boolean; data: any }>(`/admin/careers/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Admin - Universities
+  async createAdminUniversity(input: { name: string; abbreviation: string; description?: string; website?: string }) {
+    return this.request<{ success: boolean; data: any }>('/admin/universities', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async updateAdminUniversity(id: string, input: { name?: string; abbreviation?: string; description?: string; website?: string }) {
+    return this.request<{ success: boolean; data: any }>(`/admin/universities/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async deleteAdminUniversity(id: string) {
+    return this.request<{ success: boolean; data: any }>(`/admin/universities/${id}`, {
       method: 'DELETE',
     });
   }

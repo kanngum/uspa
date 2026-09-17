@@ -85,6 +85,7 @@ export default function RegisterPage() {
                     required
                   />
                 </div>
+              </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Last name</label>
                 <div className="relative">
@@ -98,6 +99,7 @@ export default function RegisterPage() {
                     required
                   />
                 </div>
+              </div>
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Email address</label>
@@ -112,6 +114,7 @@ export default function RegisterPage() {
                   required
                 />
               </div>
+            </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Password</label>
               <div className="relative">
@@ -128,6 +131,7 @@ export default function RegisterPage() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+            </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Confirm password</label>
               <div className="relative">
@@ -141,6 +145,7 @@ export default function RegisterPage() {
                   required
                 />
               </div>
+            </div>
             <Button type="submit" variant="primary" className="w-full" disabled={register.isPending}>
               {register.isPending ? "Creating account..." : "Create account"}
             </Button>
@@ -156,3 +161,4 @@ export default function RegisterPage() {
     </div>
   );
 }
+

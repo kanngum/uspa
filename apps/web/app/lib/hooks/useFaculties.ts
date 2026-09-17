@@ -3,10 +3,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/app/lib/api";
 
-export function useFaculties() {
+export function useFaculties(universityId?: string) {
   return useQuery({
-    queryKey: ["faculties"],
-    queryFn: () => api.getFaculties(),
+    queryKey: ["faculties", universityId],
+    queryFn: () => api.getFaculties(universityId),
   });
 }
 

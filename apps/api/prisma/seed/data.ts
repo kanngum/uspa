@@ -19,282 +19,847 @@ export const academicUnits = [
     name: 'Faculty of Health Sciences',
     abbreviation: 'FHS',
     type: 'FACULTY' as const,
-    description:
-      'Offers programmes in Medicine, Nursing, Biomedical Sciences, and related health fields.',
+    description: 'Offers programmes in health, clinical science, medicine, nursing, pharmacy and public health.',
     departments: [
       {
-        name: 'Department of Medicine and Surgery',
-        abbreviation: 'MED',
-        description: 'Offers the MBBS degree programme',
-      },
-      {
-        name: 'Department of Nursing Sciences',
-        abbreviation: 'NURS',
-        description: 'Offers BSc in Nursing',
-      },
-      {
-        name: 'Department of Biomedical Sciences',
+        name: 'Biomedical Science',
         abbreviation: 'BMS',
-        description: 'Offers BSc in Biomedical Sciences',
+        description: 'Offers programmes in biomedical science',
       },
       {
-        name: 'Department of Public Health',
-        abbreviation: 'PH',
-        description: 'Offers BSc and MPH programmes',
+        name: 'Clinical Science',
+        abbreviation: 'CLS',
+        description: 'Offers programmes in clinical science',
       },
       {
-        name: 'Department of Medical Laboratory Science',
+        name: 'General Medicine',
+        abbreviation: 'MD',
+        description: 'Offers programmes in general medicine',
+      },
+      {
+        name: 'Medical and BioMedical Sciences',
+        abbreviation: 'MBMS',
+        description: 'Offers programmes in medical and biomedical sciences',
+      },
+      {
+        name: 'Medical Laboratory Science',
         abbreviation: 'MLS',
-        description: 'Offers BSc in Medical Laboratory Science',
+        description: 'Offers programmes in medical laboratory science',
       },
       {
-        name: 'Department of Pharmacy',
-        abbreviation: 'PHARM',
-        description: 'Offers Pharmacy programmes',
+        name: 'Nursing/Midwifery',
+        abbreviation: 'NMW',
+        description: 'Offers programmes in nursing and midwifery',
+      },
+      {
+        name: 'Pharmacy',
+        abbreviation: 'PHAM',
+        description: 'Offers programmes in pharmacy',
+      },
+      {
+        name: 'Public Health',
+        abbreviation: 'PH',
+        description: 'Offers programmes in public health',
       },
     ],
   },
+
   {
-    name: 'Faculty of Engineering and Technology',
-    abbreviation: 'FET',
-    type: 'FACULTY' as const,
-    description:
-      'Provides engineering and technology programmes including Civil, Electrical, Mechanical, Computer Engineering, and more.',
-    departments: [
-      {
-        name: 'Department of Civil Engineering',
-        abbreviation: 'CIV',
-        description: 'Offers BEng in Civil Engineering',
-      },
-      {
-        name: 'Department of Electrical and Electronic Engineering',
-        abbreviation: 'EEE',
-        description: 'Offers BEng in Electrical and Electronic Engineering',
-      },
-      {
-        name: 'Department of Mechanical Engineering',
-        abbreviation: 'MEC',
-        description: 'Offers BEng in Mechanical Engineering',
-      },
-      {
-        name: 'Department of Computer Engineering',
-        abbreviation: 'CPE',
-        description: 'Offers BEng in Computer Engineering',
-      },
-      {
-        name: 'Department of Telecommunications Engineering',
-        abbreviation: 'TEL',
-        description: 'Offers BEng in Telecommunications Engineering',
-      },
-    ],
-  },
+  name: 'Faculty of Engineering and Technology',
+  abbreviation: 'FET',
+  type: 'FACULTY' as const,
+  description: 'Provides engineering and technology programmes including Civil, Electrical, Mechanical, Computer, and Telecommunications Engineering.',
+  departments: [
+    {
+      name: 'Civil Engineering',
+      abbreviation: 'CIV',
+      description: 'Offers programmes in civil engineering',
+    },
+    {
+      name: 'Electrical and Electronic Engineering',
+      abbreviation: 'EEE',
+      description: 'Offers programmes in electrical and electronic engineering',
+    },
+    {
+      name: 'Mechanical Engineering',
+      abbreviation: 'MEC',
+      description: 'Offers programmes in mechanical engineering',
+    },
+    {
+      name: 'Computer Engineering',
+      abbreviation: 'CPE',
+      description: 'Offers programmes in computer engineering',
+    },
+    {
+      name: 'Telecommunications Engineering',
+      abbreviation: 'TEL',
+      description: 'Offers programmes in telecommunications engineering',
+    },
+  ],
+},
+
   {
     name: 'Faculty of Law and Political Science',
-    abbreviation: 'FLP',
+    abbreviation: 'FLPS',
     type: 'FACULTY' as const,
-    description:
-      'Offers programmes in Law, Political Science, International Relations, and related fields.',
+    description: 'Offers programmes in law, political science and public law.',
     departments: [
       {
-        name: 'Department of Law',
-        abbreviation: 'LAW',
-        description: 'Offers LLB programme',
+        name: 'Capacité en Droit',
+        abbreviation: 'CAPA',
+        description: 'Offers programmes in legal capacity and law',
       },
       {
-        name: 'Department of Political Science',
-        abbreviation: 'POL',
-        description: 'Offers BA and MSc in Political Science',
+        name: 'English Private Law',
+        abbreviation: 'EPL',
+        description: 'Offers programmes in English private law',
       },
       {
-        name: 'Department of International Relations',
-        abbreviation: 'IR',
-        description: 'Offers BA in International Relations',
+        name: 'French Private Law',
+        abbreviation: 'FPL',
+        description: 'Offers programmes in French private law',
+      },
+      {
+        name: 'Political Science',
+        abbreviation: 'POS',
+        description: 'Offers programmes in political science',
+      },
+      {
+        name: 'Public Law',
+        abbreviation: 'PUL',
+        description: 'Offers programmes in public law',
       },
     ],
   },
+
   {
     name: 'Faculty of Science',
-    abbreviation: 'FSE',
+    abbreviation: 'FS',
     type: 'FACULTY' as const,
-    description: 'Offers programmes in Mathematics, Computer Science, Physics, Chemistry, Biology.',
+    description: 'Offers science programmes in biology, chemistry, physics, geology, mathematics and related fields.',
     departments: [
       {
-        name: 'Department of Computer Science',
-        abbreviation: 'CS',
-        description: 'Offers BSc and MSc in Computer Science',
+        name: 'Zoology',
+        abbreviation: 'ZOO',
+        description: 'Offers programmes in zoology',
       },
       {
-        name: 'Department of Mathematics',
-        abbreviation: 'MATH',
-        description: 'Offers BSc and MSc in Mathematics',
+        name: 'Biochemistry',
+        abbreviation: 'BCH',
+        description: 'Offers programmes in biochemistry',
       },
       {
-        name: 'Department of Physics',
+        name: 'Biological Science',
+        abbreviation: 'BS',
+        description: 'Offers programmes in biological science',
+      },
+      {
+        name: 'Chemistry',
+        abbreviation: 'CHM',
+        description: 'Offers programmes in chemistry',
+      },
+      {
+        name: 'Geology, Mining and Environmental Science',
+        abbreviation: 'GMES',
+        description: 'Offers programmes in geology, mining and environmental science',
+      },
+      {
+        name: 'Mathematics and Computer Science',
+        abbreviation: 'MCS',
+        description: 'Offers programmes in mathematics and computer science',
+      },
+      {
+        name: 'Microbiology and Parasitology',
+        abbreviation: 'MICP',
+        description: 'Offers programmes in microbiology and parasitology',
+      },
+      {
+        name: 'Physics',
         abbreviation: 'PHY',
-        description: 'Offers BSc in Physics',
+        description: 'Offers programmes in physics',
       },
       {
-        name: 'Department of Chemistry',
-        abbreviation: 'CHEM',
-        description: 'Offers BSc in Chemistry',
+        name: 'Plant Sciences (Botany)',
+        abbreviation: 'BOT',
+        description: 'Offers programmes in plant sciences and botany',
       },
       {
-        name: 'Department of Biology',
-        abbreviation: 'BIO',
-        description: 'Offers BSc in Biology',
-      },
-      {
-        name: 'Department of Geology',
-        abbreviation: 'GEO',
-        description: 'Offers BSc in Geology',
-      },
-      {
-        name: 'Department of Environmental Science',
-        abbreviation: 'ENV',
-        description: 'Offers BSc in Environmental Science',
+        name: 'Thermal and Energy Engineering',
+        abbreviation: 'TEE',
+        description: 'Offers programmes in thermal and energy engineering',
       },
     ],
   },
+
   {
     name: 'Faculty of Arts',
-    abbreviation: 'FALA',
+    abbreviation: 'FA',
     type: 'FACULTY' as const,
-    description:
-      'Offers programmes in English, French, History, Geography, Philosophy, and other humanities.',
+    description: 'Offers programmes in humanities, language studies, arts and communication.',
     departments: [
       {
-        name: 'Department of English',
+        name: 'Communication and Development Studies',
+        abbreviation: 'CDS',
+        description: 'Offers programmes in communication and development studies',
+      },
+      {
+        name: 'Education',
+        abbreviation: 'ED',
+        description: 'Offers programmes in education',
+      },
+      {
+        name: 'English',
         abbreviation: 'ENG',
-        description: 'Offers BA in English',
+        description: 'Offers programmes in English',
       },
       {
-        name: 'Department of French',
-        abbreviation: 'FREN',
-        description: 'Offers BA in French',
+        name: 'English, Literature and Digital Cultures',
+        abbreviation: 'ELDIC',
+        description: 'Offers programmes in English, literature and digital cultures',
       },
       {
-        name: 'Department of History',
-        abbreviation: 'HIST',
-        description: 'Offers BA in History',
+        name: 'Geography and Planning',
+        abbreviation: 'GP',
+        description: 'Offers programmes in geography and planning',
       },
       {
-        name: 'Department of Geography',
-        abbreviation: 'GEOG',
-        description: 'Offers BA in Geography',
+        name: 'History, Heritage and International Studies',
+        abbreviation: 'HISA',
+        description: 'Offers programmes in history, heritage and international studies',
       },
       {
-        name: 'Department of Philosophy',
-        abbreviation: 'PHIL',
-        description: 'Offers BA in Philosophy',
+        name: 'Linguistics and African Languages',
+        abbreviation: 'LAL',
+        description: 'Offers programmes in linguistics and African languages',
       },
       {
-        name: 'Department of Sociology and Anthropology',
-        abbreviation: 'SOC',
-        description: 'Offers BA in Sociology',
+        name: 'Performing and Visual Arts',
+        abbreviation: 'PVA',
+        description: 'Offers programmes in performing and visual arts',
       },
       {
-        name: 'Department of Economics',
-        abbreviation: 'ECON',
-        description: 'Offers BA and MSc in Economics',
-      },
-    ],
-  },
-  {
-    name: 'Higher Teacher Training College Bambili',
-    abbreviation: 'HTTTC Bambili',
-    type: 'SCHOOL' as const,
-    description:
-      'Trains secondary school teachers in various subject disciplines.',
-    departments: [
-      {
-        name: 'Department of Sciences',
-        abbreviation: 'SCI-ED',
-        description: 'Trains science teachers',
+        name: 'Philosophy',
+        abbreviation: 'PHI',
+        description: 'Offers programmes in philosophy',
       },
       {
-        name: 'Department of Arts',
-        abbreviation: 'ART-ED',
-        description: 'Trains arts teachers',
+        name: 'Psychology',
+        abbreviation: 'PY',
+        description: 'Offers programmes in psychology',
       },
       {
-        name: 'Department of Bilingual Studies',
-        abbreviation: 'BIL-ED',
-        description: 'Trains bilingual teachers',
+        name: 'University of Bamenda Language Center',
+        abbreviation: 'UBALAC',
+        description: 'Offers language and cultural programmes',
       },
     ],
   },
+
   {
-    name: 'Higher Teacher Training College Kumba',
-    abbreviation: 'HTTTC Kumba',
-    type: 'SCHOOL' as const,
-    description:
-      'Trains technical and vocational teachers.',
+    name: 'Faculty of Education',
+    abbreviation: 'FED',
+    type: 'FACULTY' as const,
+    description: 'Offers education and teacher training programmes across multiple specializations.',
     departments: [
       {
-        name: 'Department of Technical Education',
-        abbreviation: 'TECH-ED',
-        description: 'Trains technical teachers',
+        name: 'Bereavement Counseling',
+        abbreviation: 'BRC',
+        description: 'Offers programmes in bereavement counseling',
       },
       {
-        name: 'Department of Vocational Education',
-        abbreviation: 'VOC-ED',
-        description: 'Trains vocational teachers',
+        name: 'Counseling Psychology',
+        abbreviation: 'CPY',
+        description: 'Offers programmes in counseling psychology',
+      },
+      {
+        name: 'Curriculum and Pedagogy',
+        abbreviation: 'CUP',
+        description: 'Offers programmes in curriculum and pedagogy',
+      },
+      {
+        name: 'Distance Education',
+        abbreviation: 'DED',
+        description: 'Offers programmes in distance education',
+      },
+      {
+        name: 'Educational Foundation',
+        abbreviation: 'EFA',
+        description: 'Offers programmes in educational foundation',
+      },
+      {
+        name: 'Educational Leadership',
+        abbreviation: 'EDL',
+        description: 'Offers programmes in educational leadership',
+      },
+      {
+        name: 'Educational Psychology',
+        abbreviation: 'EPY',
+        description: 'Offers programmes in educational psychology',
+      },
+      {
+        name: 'Industrial and Organizational Psychology',
+        abbreviation: 'IPY',
+        description: 'Offers programmes in industrial and organizational psychology',
+      },
+      {
+        name: 'Physical Education and Animation',
+        abbreviation: 'PEA',
+        description: 'Offers programmes in physical education and animation',
+      },
+      {
+        name: 'School Counseling',
+        abbreviation: 'SCC',
+        description: 'Offers programmes in school counseling',
+      },
+      {
+        name: 'Sports',
+        abbreviation: 'SPTS',
+        description: 'Offers programmes in sports',
+      },
+      {
+        name: 'Teacher Education',
+        abbreviation: 'TED',
+        description: 'Offers programmes in teacher education',
       },
     ],
   },
+
   {
-    name: 'College of Technology',
-    abbreviation: 'COLTECH',
-    type: 'SCHOOL' as const,
-    description:
-      'Offers professional and vocational training in technology fields.',
+    name: 'Faculty of Economics and Management Sciences',
+    abbreviation: 'FEMS',
+    type: 'FACULTY' as const,
+    description: 'Offers programmes in economics, accounting, finance, management and marketing.',
     departments: [
       {
-        name: 'Department of Information and Communication Technology',
-        abbreviation: 'ICT',
-        description: 'Offers HND and Professional programmes in ICT',
+        name: 'Accounting',
+        abbreviation: 'ACC',
+        description: 'Offers programmes in accounting',
       },
       {
-        name: 'Department of Electrical Engineering',
-        abbreviation: 'ELEC',
-        description: 'Offers HND in Electrical Engineering',
+        name: 'Banking and Finance',
+        abbreviation: 'BNF',
+        description: 'Offers programmes in banking and finance',
       },
       {
-        name: 'Department of Mechanical Engineering',
-        abbreviation: 'MECH',
-        description: 'Offers HND in Mechanical Engineering',
-      },
-    ],
-  },
-  {
-    name: 'College of Business and Management Sciences',
-    abbreviation: 'CBMS',
-    type: 'SCHOOL' as const,
-    description:
-      'Offers business, accounting, management and related programmes.',
-    departments: [
-      {
-        name: 'Department of Accounting',
-        abbreviation: 'ACCT',
-        description: 'Offers BSc and HND in Accounting',
-      },
-      {
-        name: 'Department of Management',
-        abbreviation: 'MGMT',
-        description: 'Offers BSc in Management',
-      },
-      {
-        name: 'Department of Marketing',
-        abbreviation: 'MKT',
-        description: 'Offers BSc in Marketing',
-      },
-      {
-        name: 'Department of Banking and Finance',
+        name: 'Business and Finance',
         abbreviation: 'BF',
-        description: 'Offers BSc in Banking and Finance',
+        description: 'Offers programmes in business and finance',
+      },
+      {
+        name: 'Economics',
+        abbreviation: 'ECN',
+        description: 'Offers programmes in economics',
+      },
+      {
+        name: 'Management and Marketing',
+        abbreviation: 'MGT',
+        description: 'Offers programmes in management and marketing',
       },
     ],
   },
+
+  {
+    name: 'Higher Technical Teacher Training College',
+    abbreviation: 'HTTTC',
+    type: 'SCHOOL' as const,
+    description: 'Offers teacher training and technical education programmes.',
+    departments: [
+      {
+        name: 'Administrative Techniques',
+        abbreviation: 'ADT',
+        description: 'Offers programmes in administrative techniques',
+      },
+      {
+        name: 'Civil Engineering and Forestry Techniques',
+        abbreviation: 'CEFT',
+        description: 'Offers programmes in civil engineering and forestry techniques',
+      },
+      {
+        name: 'Computer Science',
+        abbreviation: 'CSC',
+        description: 'Offers programmes in computer science',
+      },
+      {
+        name: 'Economic Science',
+        abbreviation: 'ECS',
+        description: 'Offers programmes in economic science',
+      },
+      {
+        name: 'Electrical and Power Engineering',
+        abbreviation: 'EPE',
+        description: 'Offers programmes in electrical and power engineering',
+      },
+      {
+        name: 'Electronics and Electricity',
+        abbreviation: 'EELEC',
+        description: 'Offers programmes in electronics and electricity',
+      },
+      {
+        name: 'Fundamental Science',
+        abbreviation: 'FS',
+        description: 'Offers programmes in fundamental science',
+      },
+      {
+        name: 'Law',
+        abbreviation: 'LAW',
+        description: 'Offers programmes in law',
+      },
+      {
+        name: 'Mechanical Engineering',
+        abbreviation: 'MEN',
+        description: 'Offers programmes in mechanical engineering',
+      },
+      {
+        name: 'Renewable Energy',
+        abbreviation: 'REEN',
+        description: 'Offers programmes in renewable energy',
+      },
+      {
+        name: 'Science of Education',
+        abbreviation: 'SED',
+        description: 'Offers programmes in science of education',
+      },
+      {
+        name: 'Social Economy and Family Management',
+        abbreviation: 'SFM',
+        description: 'Offers programmes in social economy and family management',
+      },
+    ],
+  },
+
+  {
+  name: 'College of Business and Management Sciences',
+  abbreviation: 'CBMS',
+  type: 'SCHOOL' as const,
+  description: 'Offers business, accounting, management and finance programmes.',
+  departments: [
+    {
+      name: 'Accounting',
+      abbreviation: 'ACCT',
+      description: 'Offers programmes in accounting',
+    },
+    {
+      name: 'Banking and Finance',
+      abbreviation: 'BF',
+      description: 'Offers programmes in banking and finance',
+    },
+    {
+      name: 'Business and Finance',
+      abbreviation: 'BFN',
+      description: 'Offers programmes in business and finance',
+    },
+    {
+      name: 'Marketing',
+      abbreviation: 'MKT',
+      description: 'Offers programmes in marketing',
+    },
+  ],
+},
+
+  {
+    name: 'Higher Institute of Commerce and Management',
+    abbreviation: 'HICM',
+    type: 'SCHOOL' as const,
+    description: 'Offers commerce, management, transport and hospitality programmes.',
+    departments: [
+      {
+        name: 'Information and Communication Management Systems',
+        abbreviation: 'IMC',
+        description: 'Offers programmes in information and communication management systems',
+      },
+      {
+        name: 'Accounting and Finance',
+        abbreviation: 'AFN',
+        description: 'Offers programmes in accounting and finance',
+      },
+      {
+        name: 'Insurance',
+        abbreviation: 'INS',
+        description: 'Offers programmes in insurance',
+      },
+      {
+        name: 'Management and Entrepreneurship',
+        abbreviation: 'MGTC',
+        description: 'Offers programmes in management and entrepreneurship',
+      },
+      {
+        name: 'Marketing',
+        abbreviation: 'MKT',
+        description: 'Offers programmes in marketing',
+      },
+      {
+        name: 'Money and Banking',
+        abbreviation: 'MAB',
+        description: 'Offers programmes in money and banking',
+      },
+      {
+        name: 'Organizational Sciences',
+        abbreviation: 'OGS',
+        description: 'Offers programmes in organizational sciences',
+      },
+      {
+        name: 'Air Transport',
+        abbreviation: 'ATR',
+        description: 'Offers programmes in air transport',
+      },
+      {
+        name: 'Customs',
+        abbreviation: 'CUS',
+        description: 'Offers programmes in customs',
+      },
+      {
+        name: 'General Studies',
+        abbreviation: 'GNS',
+        description: 'Offers programmes in general studies',
+      },
+      {
+        name: 'Land Transport',
+        abbreviation: 'LTP',
+        description: 'Offers programmes in land transport',
+      },
+      {
+        name: 'Maritime Transport',
+        abbreviation: 'MTT',
+        description: 'Offers programmes in maritime transport',
+      },
+      {
+        name: 'Tourism and Hospitality Management',
+        abbreviation: 'TM',
+        description: 'Offers programmes in tourism and hospitality management',
+      },
+      {
+        name: 'Transit and Logistics',
+        abbreviation: 'TLG',
+        description: 'Offers programmes in transit and logistics',
+      },
+    ],
+  },
+
+  {
+    name: 'Higher Institute of Transport and Logistics',
+    abbreviation: 'HITL',
+    type: 'SCHOOL' as const,
+    description: 'Offers transport, logistics, education and language-related programmes.',
+    departments: [
+      {
+        name: 'Arts, Languages & Literatures and Philosophy',
+        abbreviation: 'ALLP',
+        description: 'Offers programmes in arts, languages, literatures and philosophy',
+      },
+      {
+        name: 'Bilingual Letters',
+        abbreviation: 'BIL',
+        description: 'Offers programmes in bilingual letters',
+      },
+      {
+        name: 'Biology - Geology - Chemistry - Environmental Science',
+        abbreviation: 'BGC',
+        description: 'Offers programmes in biology, geology, chemistry and environmental science',
+      },
+      {
+        name: 'Biology',
+        abbreviation: 'BIO',
+        description: 'Offers programmes in biology',
+      },
+      {
+        name: 'Chemistry',
+        abbreviation: 'CHM',
+        description: 'Offers programmes in chemistry',
+      },
+      {
+        name: 'Computer Science',
+        abbreviation: 'CSC',
+        description: 'Offers programmes in computer science',
+      },
+      {
+        name: 'Economics',
+        abbreviation: 'ECONS',
+        description: 'Offers programmes in economics',
+      },
+      {
+        name: 'Economics, Citizenship Education, Information and Communication',
+        abbreviation: 'ECEI',
+        description: 'Offers programmes in economics, citizenship education, information and communication',
+      },
+      {
+        name: 'English, Arts Education, National Languages and Cultures',
+        abbreviation: 'FAEN',
+        description: 'Offers programmes in English, arts education, national languages and cultures',
+      },
+      {
+        name: 'English Modern Letters',
+        abbreviation: 'EML',
+        description: 'Offers programmes in English modern letters',
+      },
+      {
+        name: 'French, Arts Education, National Languages and Cultures',
+        abbreviation: 'FAEN',
+        description: 'Offers programmes in French, arts education, national languages and cultures',
+      },
+      {
+        name: 'French Modern Letters',
+        abbreviation: 'FML',
+        description: 'Offers programmes in French modern letters',
+      },
+      {
+        name: 'Geography',
+        abbreviation: 'GEO',
+        description: 'Offers programmes in geography',
+      },
+      {
+        name: 'Geology',
+        abbreviation: 'GELG',
+        description: 'Offers programmes in geology',
+      },
+      {
+        name: 'Guidance and Counseling',
+        abbreviation: 'GNC',
+        description: 'Offers programmes in guidance and counseling',
+      },
+      {
+        name: 'History',
+        abbreviation: 'HIS',
+        description: 'Offers programmes in history',
+      },
+      {
+        name: 'History/Geography, Citizenship Education and Information',
+        abbreviation: 'HGCE',
+        description: 'Offers programmes in history/geography, citizenship education and information',
+      },
+      {
+        name: 'Mathematics',
+        abbreviation: 'MAT',
+        description: 'Offers programmes in mathematics',
+      },
+      {
+        name: 'Mathematics, Fundamental Computer Science and Technology',
+        abbreviation: 'MFCT',
+        description: 'Offers programmes in mathematics, fundamental computer science and technology',
+      },
+      {
+        name: 'One Foreign Language (Chinese), One Official Language and Art',
+        abbreviation: 'OFLC',
+        description: 'Offers programmes in Chinese, one official language and art',
+      },
+      {
+        name: 'One Foreign Language (German), One Official Language and Arts',
+        abbreviation: 'OFLG',
+        description: 'Offers programmes in German, one official language and arts',
+      },
+      {
+        name: 'One Foreign Language (Italian), One Official Language and Art',
+        abbreviation: 'OFLI',
+        description: 'Offers programmes in Italian, one official language and art',
+      },
+      {
+        name: 'One Foreign Language (Spanish), One Official Language and Art',
+        abbreviation: 'OFLS',
+        description: 'Offers programmes in Spanish, one official language and art',
+      },
+      {
+        name: 'Philosophy',
+        abbreviation: 'PHI',
+        description: 'Offers programmes in philosophy',
+      },
+      {
+        name: 'Philosophy, One Foreign Language and One Official Language',
+        abbreviation: 'POFL',
+        description: 'Offers programmes in philosophy, one foreign language and one official language',
+      },
+      {
+        name: 'Physics',
+        abbreviation: 'PHY',
+        description: 'Offers programmes in physics',
+      },
+      {
+        name: 'Physics, Chemistry and Technology',
+        abbreviation: 'PCTN',
+        description: 'Offers programmes in physics, chemistry and technology',
+      },
+      {
+        name: 'Science of Education',
+        abbreviation: 'SED',
+        description: 'Offers programmes in science of education',
+      },
+      {
+        name: 'Sciences of Education',
+        abbreviation: 'SCEN',
+        description: 'Offers programmes in sciences of education',
+      },
+    ],
+  },
+
+  {
+    name: 'HND/HPD/B.TECH Academic Organ',
+    abbreviation: 'HND',
+    type: 'SCHOOL' as const,
+    description: 'Offers HND, HPD and B.Tech programmes across applied sciences and engineering.',
+    departments: [
+      {
+        name: 'Agriculture and Food Sciences',
+        abbreviation: 'AFSH',
+        description: 'Offers programmes in agriculture and food sciences',
+      },
+      {
+        name: 'Business, Finance and Management',
+        abbreviation: 'BFM',
+        description: 'Offers programmes in business, finance and management',
+      },
+      {
+        name: 'Civil Engineering',
+        abbreviation: 'CVEN',
+        description: 'Offers programmes in civil engineering',
+      },
+      {
+        name: 'Computer Engineering (X)',
+        abbreviation: 'CME',
+        description: 'Offers programmes in computer engineering',
+      },
+      {
+        name: 'Education',
+        abbreviation: 'ED',
+        description: 'Offers programmes in education',
+      },
+      {
+        name: 'Electrical and Electronic Engineering',
+        abbreviation: 'EEEH',
+        description: 'Offers programmes in electrical and electronic engineering',
+      },
+      {
+        name: 'Forestry and Wildlife Technology',
+        abbreviation: 'FWT',
+        description: 'Offers programmes in forestry and wildlife technology',
+      },
+      {
+        name: 'Home Economics and Social Work HND/BTECH',
+        abbreviation: 'HESW',
+        description: 'Offers programmes in home economics and social work',
+      },
+      {
+        name: 'Journalism and Media',
+        abbreviation: 'JMH',
+        description: 'Offers programmes in journalism and media',
+      },
+      {
+        name: 'Law',
+        abbreviation: 'LL',
+        description: 'Offers programmes in law',
+      },
+      {
+        name: 'Management',
+        abbreviation: 'MANH',
+        description: 'Offers programmes in management',
+      },
+      {
+        name: 'Mechanical Engineering',
+        abbreviation: 'ME',
+        description: 'Offers programmes in mechanical engineering',
+      },
+      {
+        name: 'Medical and Biomedical Sciences',
+        abbreviation: 'MBSH',
+        description: 'Offers programmes in medical and biomedical sciences',
+      },
+      {
+        name: 'Thermal and Energy Engineering',
+        abbreviation: 'TEE',
+        description: 'Offers programmes in thermal and energy engineering',
+      },
+      {
+        name: 'Tourism Management',
+        abbreviation: 'TM',
+        description: 'Offers programmes in tourism management',
+      },
+      {
+        name: 'Transport and Maritime Studies',
+        abbreviation: 'TMS',
+        description: 'Offers programmes in transport and maritime studies',
+      },
+      {
+        name: 'Woodworks',
+        abbreviation: 'WWH',
+        description: 'Offers programmes in woodworks',
+      },
+    ],
+  },
+
+  {
+    name: 'National Higher Polytechnic Institute',
+    abbreviation: 'NAHPI',
+    type: 'SCHOOL' as const,
+    description: 'Offers polytechnic engineering and technical programmes.',
+    departments: [
+      {
+        name: 'Centre for Cybersecurity and Mathematical Cryptology',
+        abbreviation: 'CMC',
+        description: 'Offers programmes in cybersecurity and mathematical cryptology',
+      },
+      {
+        name: 'Chemical and Biological Engineering',
+        abbreviation: 'CBE',
+        description: 'Offers programmes in chemical and biological engineering',
+      },
+      {
+        name: 'Civil Engineering and Architecture',
+        abbreviation: 'CVL',
+        description: 'Offers programmes in civil engineering and architecture',
+      },
+      {
+        name: 'Computer Engineering',
+        abbreviation: 'COM',
+        description: 'Offers programmes in computer engineering',
+      },
+      {
+        name: 'Electrical and Electronic Engineering',
+        abbreviation: 'EEEE',
+        description: 'Offers programmes in electrical and electronic engineering',
+      },
+      {
+        name: 'Mechanical and Industrial Engineering',
+        abbreviation: 'MEC',
+        description: 'Offers programmes in mechanical and industrial engineering',
+      },
+      {
+        name: 'Mining and Mineral Engineering',
+        abbreviation: 'MIN',
+        description: 'Offers programmes in mining and mineral engineering',
+      },
+      {
+        name: 'Petroleum Engineering',
+        abbreviation: 'PET',
+        description: 'Offers programmes in petroleum engineering',
+      },
+    ],
+  },
+
+  {
+    name: 'Doctoral Training',
+    abbreviation: 'DT',
+    type: 'SCHOOL' as const,
+    description: 'Supports advanced doctoral research and training across multiple sciences.',
+    departments: [
+      {
+        name: 'Economics and Management Sciences',
+        abbreviation: 'DTCM',
+        description: 'Doctoral training in economics and management sciences',
+      },
+      {
+        name: 'Human Health Sciences - Biomedical Sciences - Public Health',
+        abbreviation: 'DTCH',
+        description: 'Doctoral training in human health sciences, biomedical sciences and public health',
+      },
+      {
+        name: 'Physical Sciences - Agricultural and Environmental Sciences',
+        abbreviation: 'DTCS',
+        description: 'Doctoral training in physical sciences and agricultural and environmental sciences',
+      },
+      {
+        name: 'Process-Oriented and Allied Engineering Sciences',
+        abbreviation: 'DTCE',
+        description: 'Doctoral training in process-oriented and allied engineering sciences',
+      },
+    ],
+  }
 ];
 
 // ==========================================

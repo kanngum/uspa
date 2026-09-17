@@ -84,6 +84,14 @@ export function useAdminSubjects(page = 1, limit = 50, search?: string, level?: 
   });
 }
 
+export function useAdminDepartments(page = 1, limit = 200, search?: string) {
+  return useQuery({
+    queryKey: ["admin", "departments", page, limit, search],
+    queryFn: () => api.getAdminDepartments(page, limit, search),
+    placeholderData: (prev) => prev,
+  });
+}
+
 export function useCreateSubject() {
   const qc = useQueryClient();
   return useMutation({

@@ -204,6 +204,26 @@ export class AdminController {
     return { success: true, data: result };
   }
 
+  // ==================== UNIVERSITY MANAGEMENT ====================
+
+  @Post('universities')
+  async createUniversity(@Body() input: { name: string; abbreviation: string; description?: string; website?: string }) {
+    const university = await this.adminService.createUniversity(input);
+    return { success: true, data: university };
+  }
+
+  @Put('universities/:id')
+  async updateUniversity(@Param('id') id: string, @Body() input: { name?: string; abbreviation?: string; description?: string; website?: string }) {
+    const university = await this.adminService.updateUniversity(id, input);
+    return { success: true, data: university };
+  }
+
+  @Delete('universities/:id')
+  async deleteUniversity(@Param('id') id: string) {
+    const result = await this.adminService.deleteUniversity(id);
+    return { success: true, data: result };
+  }
+
   // ==================== FACULTY/DEPARTMENT MANAGEMENT ====================
 
   @Post('faculties')
@@ -222,6 +242,20 @@ export class AdminController {
   async deleteFaculty(@Param('id') id: string) {
     const result = await this.adminService.deleteFaculty(id);
     return { success: true, data: result };
+  }
+
+  @Get('departments')
+  async getAllDepartments(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+  ) {
+    const data = await this.adminService.getAllDepartments(
+      page ? parseInt(page, 10) : 1,
+      limit ? parseInt(limit, 10) : 200,
+      search,
+    );
+    return { success: true, ...data };
   }
 
   @Post('departments')
