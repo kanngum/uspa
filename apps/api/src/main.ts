@@ -8,6 +8,7 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
+  const frontendUrl = process.env.FRONTEND_URL;
   app.enableCors({
     origin: true,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
@@ -22,10 +23,10 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+  const port = Number(process.env.PORT) || 3001;
+  await app.listen(port);
 
-  await app.listen(3001);
-
-  console.log(`🚀 USPA API running at http://localhost:3001/api`);
+  console.log(`USPA API running on port ${port}/api`);
 }
 
 bootstrap();

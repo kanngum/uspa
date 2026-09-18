@@ -74,22 +74,11 @@ export function RequirementsRecord({
               <span className="rounded-full bg-accent px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white">
                 Featured programme
               </span>
-
-              {code && (
-                <span className="rounded-full border border-white/20 bg-white/5 px-3 py-1 font-mono text-[10px] font-semibold text-accent-muted">
-                  {code}
-                </span>
-              )}
             </div>
 
             <h2 className="mt-5 max-w-2xl text-[24px] font-semibold leading-tight tracking-[-0.035em] sm:text-[28px]">
               {title}
             </h2>
-
-            <p className="mt-3 max-w-xl text-sm leading-6 text-white/65">
-              Review the key programme details and admission information before
-              exploring the full programme record.
-            </p>
           </div>
         </div>
 
