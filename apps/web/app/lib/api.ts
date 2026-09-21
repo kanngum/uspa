@@ -61,6 +61,10 @@ class ApiClient {
     return this.request<{ success: boolean; data: any[] }>(`/faculties${params}`);
   }
 
+  async getAnnouncements() {
+  return this.request<{ success: boolean; data: any[] }>('/announcements');
+  }
+
   async getFaculty(idOrCode: string) {
     return this.request<{ success: boolean; data: any }>(`/faculties/${idOrCode}`);
   }

@@ -19,8 +19,17 @@ export class ProgrammesService {
     page?: number;
     limit?: number;
   }) {
-    const { query, universityId, facultyId, departmentId, degreeType, level, career, minFee, maxFee } =
-      params;
+    const {
+      query,
+      universityId,
+      facultyId,
+      departmentId,
+      degreeType,
+      level,
+      career,
+      minFee,
+      maxFee,
+    } = params;
     const page = Math.max(1, params.page || 1);
     const limit = Math.min(100, Math.max(1, params.limit || 20));
 
@@ -29,7 +38,7 @@ export class ProgrammesService {
     // University filter
     if (universityId) {
       where.department = {
-        ...(where.department as any || {}),
+        ...((where.department as any) || {}),
         academicUnit: {
           universityId,
         },
@@ -221,7 +230,10 @@ export class ProgrammesService {
   }
 
   async getFeatured(universityId?: string) {
-    const where: Prisma.ProgrammeWhereInput = {};
+    const where: Prisma.ProgrammeWhereInput = {
+      isFeatured: true,
+    };
+
     if (universityId) {
       where.department = {
         academicUnit: {
@@ -250,7 +262,10 @@ export class ProgrammesService {
           select: { requirements: true },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [
+        { featuredOrder: 'asc' },
+        { createdAt: 'desc' },
+      ],
     });
   }
 

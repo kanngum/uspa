@@ -28,7 +28,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const stored = localStorage.getItem("uspa_theme") as Theme | null;
-    if (stored) {
+
+    if (stored === "light" || stored === "dark" || stored === "system") {
       setThemeState(stored);
     }
   }, []);
@@ -37,14 +38,21 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
     const updateResolved = () => {
-      const isDark = theme === "dark" || (theme === "system" && mediaQuery.matches);
+      const isDark =
+        theme === "dark" ||
+        (theme === "system" && mediaQuery.matches);
+
       setResolvedTheme(isDark ? "dark" : "light");
       document.documentElement.classList.toggle("dark", isDark);
     };
 
     updateResolved();
+
     mediaQuery.addEventListener("change", updateResolved);
-    return () => mediaQuery.removeEventListener("change", updateResolved);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateResolved);
+    };
   }, [theme]);
 
   const setTheme = (newTheme: Theme) => {
@@ -58,9 +66,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, resolvedTheme, toggleTheme }}>
+    <ThemeContext.Provider
+      value={{
+        theme,
+        setTheme,
+        resolvedTheme,
+        toggleTheme,
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   );
 }
-

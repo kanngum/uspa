@@ -162,6 +162,12 @@ export class AdminService {
         description: input.description,
         departmentId: input.departmentId,
         isActive: input.isActive,
+        ...(input.isFeatured !== undefined && {
+          isFeatured: input.isFeatured,
+        }),
+        ...(input.featuredOrder !== undefined && {
+          featuredOrder: input.featuredOrder,
+       }),
       },
       include: {
         department: {

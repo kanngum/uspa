@@ -17,6 +17,7 @@ import { AdminModule } from './admin/admin.module';
 import { AcademicUnitsModule } from './academic-units/academic-units.module';
 import { ImportModule } from './import/import.module';
 import { UniversitiesModule } from './universities/universities.module';
+import { AnnouncementsModule } from './announcements/announcements.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { UniversitiesModule } from './universities/universities.module';
     AcademicUnitsModule,
     ImportModule,
     UniversitiesModule,
+    AnnouncementsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -299,20 +299,56 @@ function DashboardTab({ stats, statsLoading, facultiesData, popularSearches }: a
     </>
   );
 }
-
 // ==================== PROGRAMMES TAB ====================
-function ProgrammesTab({ page, setPage, search, setSearch, showToast }: any) {
-  const { data, isLoading } = useAdminProgrammes(page, 20, search || undefined);
+function ProgrammesTab({
+  page,
+  setPage,
+  search,
+  setSearch,
+  showToast,
+}: any) {
+  const { data, isLoading } = useAdminProgrammes(
+    page,
+    20,
+    search || undefined,
+  );
   const { data: departmentsData } = useAdminDepartments(1, 200);
   const createMutation = useCreateProgramme();
   const updateMutation = useUpdateProgramme();
   const deleteMutation = useDeleteProgramme();
 
-  const [modal, setModal] = useState<{ mode: ModalMode; item?: any }>({ mode: null });
-  const [form, setForm] = useState({ code: "", name: "", degree: "", level: "", duration: 3, description: "", departmentId: "" });
+  const [modal, setModal] = useState<{
+    mode: ModalMode;
+    item?: any;
+  }>({ mode: null });
+
+  const [form, setForm] = useState({
+    code: "",
+    name: "",
+    degree: "",
+    level: "",
+    duration: 3,
+    description: "",
+    departmentId: "",
+    isActive: true,
+    isFeatured: false,
+    featuredOrder: 1,
+  });
 
   const openCreate = () => {
-    setForm({ code: "", name: "", degree: "BSC", level: "UNDERGRADUATE", duration: 3, description: "", departmentId: "" });
+    setForm({
+      code: "",
+      name: "",
+      degree: "BSC",
+      level: "UNDERGRADUATE",
+      duration: 3,
+      description: "",
+      departmentId: "",
+      isActive: true,
+      isFeatured: false,
+      featuredOrder: 1,
+    });
+
     setModal({ mode: "create" });
   };
 
@@ -325,19 +361,38 @@ function ProgrammesTab({ page, setPage, search, setSearch, showToast }: any) {
       duration: item.duration || 3,
       description: item.description || "",
       departmentId: item.departmentId || "",
+      isActive: item.isActive !== false,
+      isFeatured: item.isFeatured === true,
+      featuredOrder: item.featuredOrder || 1,
     });
-    setModal({ mode: "edit", item });
+
+    setModal({
+      mode: "edit",
+      item,
+    });
   };
 
   const handleSubmit = async () => {
     try {
+      const payload = {
+        ...form,
+        featuredOrder: form.isFeatured
+          ? Number(form.featuredOrder) || 1
+          : null,
+      };
+
       if (modal.mode === "create") {
-        await createMutation.mutateAsync(form);
+        await createMutation.mutateAsync(payload);
         showToast("success", `Programme "${form.name}" created`);
       } else if (modal.mode === "edit" && modal.item) {
-        await updateMutation.mutateAsync({ id: modal.item.id, input: form });
+        await updateMutation.mutateAsync({
+          id: modal.item.id,
+          input: payload,
+        });
+
         showToast("success", "Programme updated");
       }
+
       setModal({ mode: null });
     } catch (err: any) {
       showToast("error", err.message);
@@ -346,6 +401,7 @@ function ProgrammesTab({ page, setPage, search, setSearch, showToast }: any) {
 
   const handleDelete = async (item: any) => {
     if (!confirm(`Delete "${item.name}"?`)) return;
+
     try {
       await deleteMutation.mutateAsync(item.id);
       showToast("success", "Programme deleted");
@@ -372,13 +428,23 @@ function ProgrammesTab({ page, setPage, search, setSearch, showToast }: any) {
       <div className="mb-4 flex items-center gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+
           <input
-            type="text" placeholder="Search programmes by name or code..."
-            value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            type="text"
+            placeholder="Search programmes by name or code..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
             className="w-full rounded-lg border border-zinc-200 bg-white py-2 pl-10 pr-4 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
           />
         </div>
-        <Button onClick={openCreate} className="gap-1"><Plus className="h-4 w-4" /> Add Programme</Button>
+
+        <Button onClick={openCreate} className="gap-1">
+          <Plus className="h-4 w-4" />
+          Add Programme
+        </Button>
       </div>
 
       <Card>
@@ -387,37 +453,119 @@ function ProgrammesTab({ page, setPage, search, setSearch, showToast }: any) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-zinc-200 dark:border-zinc-800">
-                  <th className="px-4 pb-3 pt-4 text-left font-medium text-zinc-500">Code</th>
-                  <th className="px-4 pb-3 pt-4 text-left font-medium text-zinc-500">Name</th>
-                  <th className="px-4 pb-3 pt-4 text-left font-medium text-zinc-500">Faculty</th>
-                  <th className="px-4 pb-3 pt-4 text-left font-medium text-zinc-500">Degree</th>
-                  <th className="px-4 pb-3 pt-4 text-left font-medium text-zinc-500">Duration</th>
-                  <th className="px-4 pb-3 pt-4 text-left font-medium text-zinc-500">Status</th>
-                  <th className="px-4 pb-3 pt-4 text-left font-medium text-zinc-500">Actions</th>
+                  <th className="px-4 pb-3 pt-4 text-left font-medium text-zinc-500">
+                    Code
+                  </th>
+
+                  <th className="px-4 pb-3 pt-4 text-left font-medium text-zinc-500">
+                    Name
+                  </th>
+
+                  <th className="px-4 pb-3 pt-4 text-left font-medium text-zinc-500">
+                    Faculty
+                  </th>
+
+                  <th className="px-4 pb-3 pt-4 text-left font-medium text-zinc-500">
+                    Degree
+                  </th>
+
+                  <th className="px-4 pb-3 pt-4 text-left font-medium text-zinc-500">
+                    Duration
+                  </th>
+
+                  <th className="px-4 pb-3 pt-4 text-left font-medium text-zinc-500">
+                    Featured
+                  </th>
+
+                  <th className="px-4 pb-3 pt-4 text-left font-medium text-zinc-500">
+                    Status
+                  </th>
+
+                  <th className="px-4 pb-3 pt-4 text-left font-medium text-zinc-500">
+                    Actions
+                  </th>
                 </tr>
               </thead>
+
               <tbody>
                 {isLoading ? (
-                  [1, 2, 3, 4, 5].map((i) => <TableRowSkeleton key={i} cols={7} />)
+                  [1, 2, 3, 4, 5].map((i) => (
+                    <TableRowSkeleton key={i} cols={8} />
+                  ))
                 ) : programmes.length === 0 ? (
-                  <tr><td colSpan={7} className="py-12 text-center text-zinc-500">No programmes found</td></tr>
+                  <tr>
+                    <td
+                      colSpan={8}
+                      className="py-12 text-center text-zinc-500"
+                    >
+                      No programmes found
+                    </td>
+                  </tr>
                 ) : (
                   programmes.map((prog: any) => (
-                    <tr key={prog.id} className="border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                      <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-50">{prog.code}</td>
-                      <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">{prog.name}</td>
-                      <td className="px-4 py-3 text-zinc-500">{prog.department?.academicUnit?.abbreviation || "N/A"}</td>
-                      <td className="px-4 py-3"><Badge variant="outline">{prog.degree}</Badge></td>
-                      <td className="px-4 py-3 text-zinc-600">{prog.duration}yrs</td>
+                    <tr
+                      key={prog.id}
+                      className="border-b border-zinc-100 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50"
+                    >
+                      <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-50">
+                        {prog.code}
+                      </td>
+
+                      <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">
+                        {prog.name}
+                      </td>
+
+                      <td className="px-4 py-3 text-zinc-500">
+                        {prog.department?.academicUnit?.abbreviation || "N/A"}
+                      </td>
+
                       <td className="px-4 py-3">
-                        <Badge variant={prog.isActive !== false ? "success" : "secondary"}>
+                        <Badge variant="outline">{prog.degree}</Badge>
+                      </td>
+
+                      <td className="px-4 py-3 text-zinc-600">
+                        {prog.duration}yrs
+                      </td>
+
+                      <td className="px-4 py-3">
+                        {prog.isFeatured ? (
+                          <Badge variant="success">
+                            #{prog.featuredOrder || "—"}
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">No</Badge>
+                        )}
+                      </td>
+
+                      <td className="px-4 py-3">
+                        <Badge
+                          variant={
+                            prog.isActive !== false
+                              ? "success"
+                              : "secondary"
+                          }
+                        >
                           {prog.isActive !== false ? "Active" : "Inactive"}
                         </Badge>
                       </td>
+
                       <td className="px-4 py-3">
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => openEdit(prog)}><Edit className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDelete(prog)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEdit(prog)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(prog)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -427,13 +575,30 @@ function ProgrammesTab({ page, setPage, search, setSearch, showToast }: any) {
             </table>
           </div>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between border-t border-zinc-200 px-4 py-3 dark:border-zinc-800">
-              <span className="text-sm text-zinc-500">Page {page} of {totalPages}</span>
+              <span className="text-sm text-zinc-500">
+                Page {page} of {totalPages}
+              </span>
+
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</Button>
-                <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>Next</Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1}
+                  onClick={() => setPage(page - 1)}
+                >
+                  Previous
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage(page + 1)}
+                >
+                  Next
+                </Button>
               </div>
             </div>
           )}
@@ -442,65 +607,295 @@ function ProgrammesTab({ page, setPage, search, setSearch, showToast }: any) {
 
       {/* Create/Edit Modal */}
       {modal.mode && (
-        <Modal title={modal.mode === "create" ? "Create Programme" : "Edit Programme"} onClose={() => setModal({ mode: null })}>
-          <div className="space-y-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Code *</label>
-              <input type="text" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })}
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50" />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Name *</label>
-              <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
+        <Modal
+          title={
+            modal.mode === "create"
+              ? "Create Programme"
+              : "Edit Programme"
+          }
+          onClose={() => setModal({ mode: null })}
+        >
+          <div className="max-h-[70vh] overflow-y-auto pr-1">
+            <div className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Degree</label>
-                <select value={form.degree} onChange={(e) => setForm({ ...form, degree: e.target.value })}
-                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50">
-                  {["BSC", "BA", "BENG", "BED", "LLB", "MBBS", "HND", "DIPLOMA", "PGD", "MSC", "MA", "MENG", "PHD", "BTECH"].map(d => (
-                    <option key={d} value={d}>{d}</option>
+                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Code *
+                </label>
+
+                <input
+                  type="text"
+                  value={form.code}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      code: e.target.value,
+                    })
+                  }
+                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Name *
+                </label>
+
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      name: e.target.value,
+                    })
+                  }
+                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    Degree
+                  </label>
+
+                  <select
+                    value={form.degree}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        degree: e.target.value,
+                      })
+                    }
+                    className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+                  >
+                    {[
+                      "BSC",
+                      "BA",
+                      "BENG",
+                      "BED",
+                      "LLB",
+                      "MBBS",
+                      "HND",
+                      "DIPLOMA",
+                      "PGD",
+                      "MSC",
+                      "MA",
+                      "MENG",
+                      "PHD",
+                      "BTECH",
+                    ].map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    Level
+                  </label>
+
+                  <select
+                    value={form.level}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        level: e.target.value,
+                      })
+                    }
+                    className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+                  >
+                    {[
+                      "UNDERGRADUATE",
+                      "POSTGRADUATE",
+                      "DOCTORATE",
+                      "PROFESSIONAL",
+                    ].map((l) => (
+                      <option key={l} value={l}>
+                        {l.replace("_", " ")}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Department *
+                </label>
+
+                <select
+                  value={form.departmentId}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      departmentId: e.target.value,
+                    })
+                  }
+                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+                >
+                  <option value="">Select department...</option>
+
+                  {departments.map((dept: any) => (
+                    <option key={dept.id} value={dept.id}>
+                      {dept.name}{" "}
+                      {dept.academicUnit
+                        ? `(${
+                            dept.academicUnit.abbreviation ||
+                            dept.academicUnit.name
+                          })`
+                        : ""}
+                    </option>
                   ))}
                 </select>
               </div>
+
               <div>
-                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Level</label>
-                <select value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value })}
-                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50">
-                  {["UNDERGRADUATE", "POSTGRADUATE", "DOCTORATE", "PROFESSIONAL"].map(l => (
-                    <option key={l} value={l}>{l.replace("_", " ")}</option>
-                  ))}
-                </select>
+                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Duration (years)
+                </label>
+
+                <input
+                  type="number"
+                  min={1}
+                  max={8}
+                  value={form.duration}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      duration: parseInt(e.target.value) || 3,
+                    })
+                  }
+                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+                />
               </div>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Department *</label>
-              <select value={form.departmentId} onChange={(e) => setForm({ ...form, departmentId: e.target.value })}
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50">
-                <option value="">Select department...</option>
-                {departments.map((dept: any) => (
-                  <option key={dept.id} value={dept.id}>
-                    {dept.name} {dept.academicUnit ? `(${dept.academicUnit.abbreviation || dept.academicUnit.name})` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Duration (years)</label>
-              <input type="number" min={1} max={8} value={form.duration} onChange={(e) => setForm({ ...form, duration: parseInt(e.target.value) || 3 })}
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50" />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Description</label>
-              <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3}
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50" />
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setModal({ mode: null })}>Cancel</Button>
-              <Button onClick={handleSubmit}>
-                <Save className="mr-1 h-4 w-4" /> {modal.mode === "create" ? "Create" : "Save"}
-              </Button>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Description
+                </label>
+
+                <textarea
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      description: e.target.value,
+                    })
+                  }
+                  rows={3}
+                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+                />
+              </div>
+```tsx
+              <div>
+                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Description
+                </label>
+
+                <textarea
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      description: e.target.value,
+                    })
+                  }
+                  rows={3}
+                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+                />
+              </div>
+
+              {/* Active Programme Settings */}
+              <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
+                <label className="flex cursor-pointer items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={form.isActive}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        isActive: e.target.checked,
+                      })
+                    }
+                    className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
+                  />
+
+                  <div>
+                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                      Active programme
+                    </span>
+
+                    <p className="mt-1 text-xs text-zinc-500">
+                      Inactive programmes will not be presented as active admissions options.
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+
+              {/* Featured Programme Settings */}
+              <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
+                <label className="flex cursor-pointer items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={form.isFeatured}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        isFeatured: e.target.checked,
+                      })
+                    }
+                    className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
+                  />
+
+                  <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    Featured on homepage
+                  </span>
+                </label>
+
+                {form.isFeatured && (
+                  <div className="mt-3">
+                    <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                      Display order
+                    </label>
+
+                    <input
+                      type="number"
+                      min={1}
+                      value={form.featuredOrder}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          featuredOrder:
+                            parseInt(e.target.value) || 1,
+                        })
+                      }
+                      className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+                    />
+
+                    <p className="mt-1 text-xs text-zinc-500">
+                      Lower numbers appear first on the homepage.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-2 border-t border-zinc-200 pt-4 dark:border-zinc-700">
+                <Button
+                  variant="outline"
+                  onClick={() => setModal({ mode: null })}
+                >
+                  Cancel
+                </Button>
+
+                <Button onClick={handleSubmit}>
+                  <Save className="mr-1 h-4 w-4" />
+                  {modal.mode === "create" ? "Create" : "Save"}
+                </Button>
+              </div>
             </div>
           </div>
         </Modal>
