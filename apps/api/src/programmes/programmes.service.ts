@@ -30,6 +30,7 @@ export class ProgrammesService {
       minFee,
       maxFee,
     } = params;
+
     const page = Math.max(1, params.page || 1);
     const limit = Math.min(100, Math.max(1, params.limit || 20));
 
@@ -48,6 +49,7 @@ export class ProgrammesService {
     // Text search across name, code, description and keywords
     if (query && query.trim().length > 0) {
       const searchTerm = query.trim();
+
       where.OR = [
         { name: { contains: searchTerm, mode: 'insensitive' } },
         { code: { contains: searchTerm, mode: 'insensitive' } },
@@ -57,7 +59,10 @@ export class ProgrammesService {
           keywords: {
             some: {
               keyword: {
-                word: { contains: searchTerm, mode: 'insensitive' },
+                word: {
+                  contains: searchTerm,
+                  mode: 'insensitive',
+                },
               },
             },
           },
@@ -66,7 +71,10 @@ export class ProgrammesService {
           careers: {
             some: {
               career: {
-                name: { contains: searchTerm, mode: 'insensitive' },
+                name: {
+                  contains: searchTerm,
+                  mode: 'insensitive',
+                },
               },
             },
           },
@@ -74,7 +82,7 @@ export class ProgrammesService {
       ];
     }
 
-    // Faculty filter
+    // Faculty / Academic Unit filter
     if (facultyId) {
       where.department = {
         academicUnitId: facultyId,
@@ -87,8 +95,26 @@ export class ProgrammesService {
     }
 
     // Degree type filter
-    if (degreeType) {
-      where.degree = degreeType as Prisma.EnumDegreeTypeFilter['equals'];
+    // degreeType can be either the stable code or the display name.
+    if (degreeType?.trim()) {
+      const degreeValue = degreeType.trim();
+
+      where.degree = {
+        OR: [
+          {
+            code: {
+              equals: degreeValue,
+              mode: 'insensitive',
+            },
+          },
+          {
+            name: {
+              equals: degreeValue,
+              mode: 'insensitive',
+            },
+          },
+        ],
+      };
     }
 
     // Level filter
@@ -101,18 +127,25 @@ export class ProgrammesService {
       where.careers = {
         some: {
           career: {
-            name: { contains: career, mode: 'insensitive' },
+            name: {
+              contains: career,
+              mode: 'insensitive',
+            },
           },
         },
       };
     }
 
-    // Tuition/fee range filter
+    // Tuition / fee range filter
     if (minFee !== undefined || maxFee !== undefined) {
       where.tuition = {
         some: {
-          ...(minFee !== undefined && { amount: { gte: minFee } }),
-          ...(maxFee !== undefined && { amount: { lte: maxFee } }),
+          ...(minFee !== undefined && {
+            amount: { gte: minFee },
+          }),
+          ...(maxFee !== undefined && {
+            amount: { lte: maxFee },
+          }),
         },
       };
     }
@@ -121,26 +154,42 @@ export class ProgrammesService {
       this.prisma.programme.findMany({
         where,
         include: {
+          degree: true,
           department: {
             include: {
               academicUnit: {
-                select: { id: true, name: true, abbreviation: true },
+                select: {
+                  id: true,
+                  name: true,
+                  abbreviation: true,
+                },
               },
             },
           },
           tuition: {
             take: 1,
             orderBy: { academicYear: 'desc' },
-            select: { amount: true, currency: true, academicYear: true },
+            select: {
+              amount: true,
+              currency: true,
+              academicYear: true,
+            },
           },
           _count: {
-            select: { requirements: true, careers: true },
+            select: {
+              requirements: true,
+              careers: true,
+            },
           },
         },
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: [{ level: 'asc' }, { name: 'asc' }],
+        orderBy: [
+          { level: 'asc' },
+          { name: 'asc' },
+        ],
       }),
+
       this.prisma.programme.count({ where }),
     ]);
 
@@ -157,10 +206,15 @@ export class ProgrammesService {
     const programme = await this.prisma.programme.findUnique({
       where: { id },
       include: {
+        degree: true,
         department: {
           include: {
             academicUnit: {
-              select: { id: true, name: true, abbreviation: true },
+              select: {
+                id: true,
+                name: true,
+                abbreviation: true,
+              },
             },
           },
         },
@@ -168,7 +222,14 @@ export class ProgrammesService {
           include: {
             subject: true,
           },
-          orderBy: [{ requirementType: 'asc' }, { subject: { name: 'asc' } }],
+          orderBy: [
+            { requirementType: 'asc' },
+            {
+              subject: {
+                name: 'asc',
+              },
+            },
+          ],
         },
         admissionRules: {
           orderBy: { category: 'asc' },
@@ -190,7 +251,9 @@ export class ProgrammesService {
     });
 
     if (!programme) {
-      throw new NotFoundException(`Programme with ID ${id} not found`);
+      throw new NotFoundException(
+        `Programme with ID ${id} not found`,
+      );
     }
 
     return programme;
@@ -200,15 +263,22 @@ export class ProgrammesService {
     const programme = await this.prisma.programme.findUnique({
       where: { code },
       include: {
+        degree: true,
         department: {
           include: {
             academicUnit: {
-              select: { id: true, name: true, abbreviation: true },
+              select: {
+                id: true,
+                name: true,
+                abbreviation: true,
+              },
             },
           },
         },
         requirements: {
-          include: { subject: true },
+          include: {
+            subject: true,
+          },
         },
         admissionRules: {
           orderBy: { category: 'asc' },
@@ -217,13 +287,17 @@ export class ProgrammesService {
           orderBy: { academicYear: 'desc' },
         },
         careers: {
-          include: { career: true },
+          include: {
+            career: true,
+          },
         },
       },
     });
 
     if (!programme) {
-      throw new NotFoundException(`Programme with code ${code} not found`);
+      throw new NotFoundException(
+        `Programme with code ${code} not found`,
+      );
     }
 
     return programme;
@@ -246,20 +320,30 @@ export class ProgrammesService {
       where,
       take: 8,
       include: {
+        degree: true,
         department: {
           include: {
             academicUnit: {
-              select: { id: true, name: true, abbreviation: true },
+              select: {
+                id: true,
+                name: true,
+                abbreviation: true,
+              },
             },
           },
         },
         tuition: {
           take: 1,
           orderBy: { academicYear: 'desc' },
-          select: { amount: true, currency: true },
+          select: {
+            amount: true,
+            currency: true,
+          },
         },
         _count: {
-          select: { requirements: true },
+          select: {
+            requirements: true,
+          },
         },
       },
       orderBy: [
@@ -282,6 +366,7 @@ export class ProgrammesService {
     const existingCode = await this.prisma.programme.findUnique({
       where: { code: input.code },
     });
+
     if (existingCode) {
       throw new NotFoundException(
         `A programme with code "${input.code}" already exists`,
@@ -292,9 +377,39 @@ export class ProgrammesService {
     const department = await this.prisma.department.findUnique({
       where: { id: input.departmentId },
     });
+
     if (!department) {
       throw new NotFoundException(
         `Department with ID ${input.departmentId} not found`,
+      );
+    }
+
+    // Resolve the configurable DegreeType.
+    // Accept either its stable code or display name.
+    const degreeValue = input.degree.trim();
+
+    const degreeType = await this.prisma.degreeType.findFirst({
+      where: {
+        OR: [
+          {
+            code: {
+              equals: degreeValue,
+              mode: 'insensitive',
+            },
+          },
+          {
+            name: {
+              equals: degreeValue,
+              mode: 'insensitive',
+            },
+          },
+        ],
+      },
+    });
+
+    if (!degreeType) {
+      throw new NotFoundException(
+        `Degree type not found: ${input.degree}`,
       );
     }
 
@@ -303,16 +418,21 @@ export class ProgrammesService {
         departmentId: input.departmentId,
         code: input.code,
         name: input.name,
-        degree: input.degree as any,
+        degreeId: degreeType.id,
         level: input.level as any,
         duration: input.duration,
         description: input.description,
       },
       include: {
+        degree: true,
         department: {
           include: {
             academicUnit: {
-              select: { id: true, name: true, abbreviation: true },
+              select: {
+                id: true,
+                name: true,
+                abbreviation: true,
+              },
             },
           },
         },
@@ -335,8 +455,11 @@ export class ProgrammesService {
     const programme = await this.prisma.programme.findUnique({
       where: { id },
     });
+
     if (!programme) {
-      throw new NotFoundException(`Programme with ID ${id} not found`);
+      throw new NotFoundException(
+        `Programme with ID ${id} not found`,
+      );
     }
 
     // Check code uniqueness if changing
@@ -344,11 +467,45 @@ export class ProgrammesService {
       const existingCode = await this.prisma.programme.findUnique({
         where: { code: input.code },
       });
+
       if (existingCode) {
         throw new NotFoundException(
           `A programme with code "${input.code}" already exists`,
         );
       }
+    }
+
+    let degreeId: string | undefined;
+
+    if (input.degree !== undefined) {
+      const degreeValue = input.degree.trim();
+
+      const degreeType = await this.prisma.degreeType.findFirst({
+        where: {
+          OR: [
+            {
+              code: {
+                equals: degreeValue,
+                mode: 'insensitive',
+              },
+            },
+            {
+              name: {
+                equals: degreeValue,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        },
+      });
+
+      if (!degreeType) {
+        throw new NotFoundException(
+          `Degree type not found: ${input.degree}`,
+        );
+      }
+
+      degreeId = degreeType.id;
     }
 
     return this.prisma.programme.update({
@@ -357,20 +514,35 @@ export class ProgrammesService {
         ...(input.departmentId !== undefined && {
           departmentId: input.departmentId,
         }),
-        ...(input.code !== undefined && { code: input.code }),
-        ...(input.name !== undefined && { name: input.name }),
-        ...(input.degree !== undefined && { degree: input.degree as any }),
-        ...(input.level !== undefined && { level: input.level as any }),
-        ...(input.duration !== undefined && { duration: input.duration }),
+        ...(input.code !== undefined && {
+          code: input.code,
+        }),
+        ...(input.name !== undefined && {
+          name: input.name,
+        }),
+        ...(degreeId !== undefined && {
+          degreeId,
+        }),
+        ...(input.level !== undefined && {
+          level: input.level as any,
+        }),
+        ...(input.duration !== undefined && {
+          duration: input.duration,
+        }),
         ...(input.description !== undefined && {
           description: input.description,
         }),
       },
       include: {
+        degree: true,
         department: {
           include: {
             academicUnit: {
-              select: { id: true, name: true, abbreviation: true },
+              select: {
+                id: true,
+                name: true,
+                abbreviation: true,
+              },
             },
           },
         },
@@ -382,12 +554,20 @@ export class ProgrammesService {
     const programme = await this.prisma.programme.findUnique({
       where: { id },
     });
+
     if (!programme) {
-      throw new NotFoundException(`Programme with ID ${id} not found`);
+      throw new NotFoundException(
+        `Programme with ID ${id} not found`,
+      );
     }
 
-    await this.prisma.programme.delete({ where: { id } });
-    return { message: 'Programme deleted successfully' };
+    await this.prisma.programme.delete({
+      where: { id },
+    });
+
+    return {
+      message: 'Programme deleted successfully',
+    };
   }
 
   async getAutoComplete(query: string) {
@@ -398,20 +578,38 @@ export class ProgrammesService {
     const programmes = await this.prisma.programme.findMany({
       where: {
         OR: [
-          { name: { contains: query.trim(), mode: 'insensitive' } },
-          { code: { contains: query.trim(), mode: 'insensitive' } },
+          {
+            name: {
+              contains: query.trim(),
+              mode: 'insensitive',
+            },
+          },
+          {
+            code: {
+              contains: query.trim(),
+              mode: 'insensitive',
+            },
+          },
         ],
       },
       select: {
         id: true,
         name: true,
         code: true,
-        degree: true,
+        degree: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+          },
+        },
         level: true,
         department: {
           select: {
             academicUnit: {
-              select: { abbreviation: true },
+              select: {
+                abbreviation: true,
+              },
             },
           },
         },
@@ -424,7 +622,8 @@ export class ProgrammesService {
       id: p.id,
       name: p.name,
       code: p.code,
-      degree: p.degree,
+      degree: p.degree.code,
+      degreeName: p.degree.name,
       level: p.level,
       faculty: p.department.academicUnit.abbreviation,
       label: `${p.code} - ${p.name} (${p.department.academicUnit.abbreviation})`,

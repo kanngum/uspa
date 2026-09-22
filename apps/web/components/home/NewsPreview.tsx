@@ -5,6 +5,7 @@ import { CalendarDays, ArrowRight } from "lucide-react";
 
 type Announcement = {
   id: string;
+  slug: string;
   title: string;
   content: string;
   createdAt: string;
@@ -85,29 +86,32 @@ export function NewsPreview({
         ) : (
           <div className="grid gap-4 md:grid-cols-3">
             {announcements.slice(0, 3).map((announcement) => (
-              <article
+              <Link
                 key={announcement.id}
-                className="group rounded-card border border-rule bg-paper p-6 transition-all hover:-translate-y-0.5 hover:border-accent hover:shadow-sm"
+                href={`/news/${announcement.slug}`}
+                className="group block"
               >
-                <div className="mb-4 flex items-center gap-2 text-xs text-muted">
-                  <CalendarDays className="h-4 w-4" />
-                  <span>{formatDate(announcement.createdAt)}</span>
-                </div>
+                <article className="h-full rounded-card border border-rule bg-paper p-6 transition-all hover:-translate-y-0.5 hover:border-accent hover:shadow-sm">
+                  <div className="mb-4 flex items-center gap-2 text-xs text-muted">
+                    <CalendarDays className="h-4 w-4" />
+                    <span>{formatDate(announcement.createdAt)}</span>
+                  </div>
 
-                {announcement.programme && (
-                  <span className="mb-3 inline-flex rounded-full bg-paper-soft px-2.5 py-1 text-[11px] font-semibold text-primary">
-                    {announcement.programme.code}
-                  </span>
-                )}
+                  {announcement.programme && (
+                    <span className="mb-3 inline-flex rounded-full bg-paper-soft px-2.5 py-1 text-[11px] font-semibold text-primary">
+                      {announcement.programme.code}
+                    </span>
+                  )}
 
-                <h3 className="line-clamp-2 text-base font-semibold leading-6 text-primary">
-                  {announcement.title}
-                </h3>
+                  <h3 className="line-clamp-2 text-base font-semibold leading-6 text-primary">
+                    {announcement.title}
+                  </h3>
 
-                <p className="mt-3 line-clamp-3 text-sm leading-6 text-muted">
-                  {excerpt(announcement.content)}
-                </p>
-              </article>
+                  <p className="mt-3 line-clamp-3 text-sm leading-6 text-muted">
+                    {excerpt(announcement.content)}
+                  </p>
+                </article>
+              </Link>
             ))}
           </div>
         )}

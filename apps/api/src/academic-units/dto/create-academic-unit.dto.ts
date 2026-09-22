@@ -2,10 +2,7 @@ import {
   IsString,
   IsNotEmpty,
   IsOptional,
-  IsEnum,
 } from 'class-validator';
-
-import { AcademicUnitType } from '@prisma/client';
 
 export class CreateAcademicUnitDto {
   @IsString()
@@ -16,8 +13,9 @@ export class CreateAcademicUnitDto {
   @IsOptional()
   abbreviation?: string;
 
-  @IsEnum(AcademicUnitType)
-  type: AcademicUnitType;
+  @IsString()
+  @IsNotEmpty()
+  typeId: string;
 
   @IsString()
   @IsOptional()

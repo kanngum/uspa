@@ -7,45 +7,73 @@ import {
   Param,
   Query,
   Body,
-} from '@nestjs/common';
-import { FacultiesService } from './faculties.service';
+} from "@nestjs/common";
+import { FacultiesService } from "./faculties.service";
 
-@Controller('faculties')
+@Controller("faculties")
 export class FacultiesController {
   constructor(private readonly facultiesService: FacultiesService) {}
 
   @Get()
   async findAll(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('search') search?: string,
-    @Query('type') type?: string,
+    @Query("page") page?: string,
+    @Query("limit") limit?: string,
+    @Query("search") search?: string,
+    @Query("type") type?: string,
+    @Query("universityId") universityId?: string,
   ) {
     const result = await this.facultiesService.findAll({
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 20,
       search,
       type,
+      universityId,
     });
-    return { success: true, ...result };
+
+    return {
+      success: true,
+      ...result,
+    };
   }
 
-  @Get('stats')
+  @Get("stats")
   async getStats() {
     const stats = await this.facultiesService.getFacultyStats();
-    return { success: true, data: stats };
+
+    return {
+      success: true,
+      data: stats,
+    };
   }
 
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
+  @Get("code/:code")
+  async findByCode(@Param("code") code: string) {
+    const faculty = await this.facultiesService.findByCode(code);
+
+    return {
+      success: true,
+      data: faculty,
+    };
+  }
+
+  @Get(":id")
+  async findOne(@Param("id") id: string) {
     const faculty = await this.facultiesService.findOne(id);
-    return { success: true, data: faculty };
+
+    return {
+      success: true,
+      data: faculty,
+    };
   }
 
-  @Get(':id/departments')
-  async getDepartments(@Param('id') id: string) {
+  @Get(":id/departments")
+  async getDepartments(@Param("id") id: string) {
     const departments = await this.facultiesService.getDepartments(id);
-    return { success: true, data: departments };
+
+    return {
+      success: true,
+      data: departments,
+    };
   }
 
   @Post()
@@ -60,12 +88,16 @@ export class FacultiesController {
     },
   ) {
     const faculty = await this.facultiesService.create(input);
-    return { success: true, data: faculty };
+
+    return {
+      success: true,
+      data: faculty,
+    };
   }
 
-  @Patch(':id')
+  @Patch(":id")
   async update(
-    @Param('id') id: string,
+    @Param("id") id: string,
     @Body()
     input: {
       name?: string;
@@ -75,12 +107,20 @@ export class FacultiesController {
     },
   ) {
     const faculty = await this.facultiesService.update(id, input);
-    return { success: true, data: faculty };
+
+    return {
+      success: true,
+      data: faculty,
+    };
   }
 
-  @Delete(':id')
-  async remove(@Param('id') id: string) {
+  @Delete(":id")
+  async remove(@Param("id") id: string) {
     const result = await this.facultiesService.remove(id);
-    return { success: true, data: result };
+
+    return {
+      success: true,
+      data: result,
+    };
   }
 }

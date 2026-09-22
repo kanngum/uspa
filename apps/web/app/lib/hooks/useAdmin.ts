@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/app/lib/api";
@@ -96,11 +96,223 @@ export function useAdminSubjects(page = 1, limit = 50, search?: string, level?: 
   });
 }
 
-export function useAdminDepartments(page = 1, limit = 200, search?: string) {
+export function useAdminUniversities() {
   return useQuery({
-    queryKey: ["admin", "departments", page, limit, search],
-    queryFn: () => api.getAdminDepartments(page, limit, search),
+    queryKey: ["admin", "universities"],
+    queryFn: () => api.getAdminUniversities(),
+  });
+}
+export function useAdminAcademicUnitTypes() {
+  return useQuery({
+    queryKey: ["admin", "academic-unit-types"],
+    queryFn: () => api.getAdminAcademicUnitTypes(),
+  });
+}
+export function useCreateAdminUniversity() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: {
+      name: string;
+      abbreviation: string;
+      description?: string;
+      website?: string;
+    }) => api.createAdminUniversity(input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "universities"] });
+    },
+  });
+}
+
+export function useUpdateAdminUniversity() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: {
+        name?: string;
+        abbreviation?: string;
+        description?: string;
+        website?: string;
+      };
+    }) => api.updateAdminUniversity(id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "universities"] });
+    },
+  });
+}
+
+export function useDeleteAdminUniversity() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => api.deleteAdminUniversity(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "universities"] });
+    },
+  });
+}
+
+export function useAdminFaculties(universityId?: string) {
+  return useQuery({
+    queryKey: ["admin", "faculties", universityId],
+    queryFn: () => api.getAdminFaculties(universityId),
+    enabled: Boolean(universityId),
+  });
+}
+
+export function useCreateAdminAcademicUnit() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: {
+      name: string;
+      abbreviation?: string;
+      description?: string;
+      type?: string;
+      universityId: string;
+    }) => api.createAdminFaculty(input),
+
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "faculties"],
+      });
+    },
+  });
+}
+
+export function useUpdateAdminAcademicUnit() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: {
+        name?: string;
+        abbreviation?: string;
+        description?: string;
+        type?: string;
+      };
+    }) => api.updateAdminFaculty(id, input),
+
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "faculties"],
+      });
+    },
+  });
+}
+
+export function useDeleteAdminAcademicUnit() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => api.deleteAdminFaculty(id),
+
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "faculties"],
+      });
+    },
+  });
+}
+export function useAdminDepartments(params?: {
+  universityId?: string;
+  academicUnitId?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const page = params?.page ?? 1;
+  const limit = params?.limit ?? 200;
+  const search = params?.search;
+  const universityId = params?.universityId;
+  const academicUnitId = params?.academicUnitId;
+
+  return useQuery({
+    queryKey: [
+      "admin",
+      "departments",
+      page,
+      limit,
+      search,
+      universityId,
+      academicUnitId,
+    ],
+    queryFn: () =>
+      api.getAdminDepartments({
+        page,
+        limit,
+        search,
+        universityId,
+        academicUnitId,
+      }),
     placeholderData: (prev) => prev,
+  });
+}
+
+export function useCreateAdminDepartment() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: {
+      name: string;
+      abbreviation?: string;
+      description?: string;
+      academicUnitId: string;
+    }) => api.createAdminDepartment(input),
+
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "departments"],
+      });
+    },
+  });
+}
+
+export function useUpdateAdminDepartment() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: {
+        name?: string;
+        abbreviation?: string;
+        description?: string;
+        academicUnitId?: string;
+      };
+    }) => api.updateAdminDepartment(id, input),
+
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "departments"],
+      });
+    },
+  });
+}
+
+export function useDeleteAdminDepartment() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => api.deleteAdminDepartment(id),
+
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "departments"],
+      });
+    },
   });
 }
 
@@ -403,4 +615,5 @@ export function useImportConfirm() {
     mutationFn: ({ type, data }: { type: string; data: any[] }) => api.importConfirm(type, data),
   });
 }
+
 

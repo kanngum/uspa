@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Patch,
   Post,
   UseGuards,
   Request,
@@ -43,6 +44,23 @@ export class AuthController {
   @Get('profile')
   async getProfile(@Request() req: any) {
     const user = await this.authService.getProfile(req.user.sub);
+    return { success: true, data: user };
+  }
+  @UseGuards(AuthGuard('jwt'))
+  @Patch('profile')
+  async updateProfile(
+    @Request() req: any,
+    @Body()
+    input: {
+      firstName: string;
+      lastName: string;
+    },
+  ) {
+    const user = await this.authService.updateProfile(
+      req.user.sub,
+      input,
+    );
+
     return { success: true, data: user };
   }
 }

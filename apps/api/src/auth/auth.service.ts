@@ -132,4 +132,46 @@ export class AuthService {
     const payload = { sub: userId, email, role };
     return this.jwtService.sign(payload);
   }
+  async updateProfile(
+    userId: string,
+    input: {
+      firstName: string;
+      lastName: string;
+    },
+  ) {
+    const firstName = input.firstName?.trim();
+    const lastName = input.lastName?.trim();
+
+    if (!firstName || !lastName) {
+      throw new ConflictException(
+        'First name and last name are required',
+      );
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        firstName,
+        lastName,
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+      },
+    });
+  }
 }

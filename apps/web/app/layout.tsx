@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/header";
@@ -23,7 +22,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "USPA - Smart Programme Advisor",
   description:
-    "Discover academic programmes, check your eligibility, get recommendations, and find the perfect programme for your qualifications.",
+    "Discover academic programmes, check your eligibility, get recommendations,and find the perfect programme for your qualifications.",
   keywords: [
     "programme advisor",
     "admission eligibility",
@@ -43,17 +42,6 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <head>
-        <Script id="theme-init" strategy="beforeInteractive">
-          {`
-            try {
-              if (localStorage.getItem('uspa_theme') === 'dark' || (!localStorage.getItem('uspa_theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-              }
-            } catch (e) {}
-          `}
-        </Script>
-      </head>
       <body className="min-h-full flex flex-col bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
         <ThemeProvider>
           <QueryProvider>
@@ -71,4 +59,3 @@ export default function RootLayout({
     </html>
   );
 }
-

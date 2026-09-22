@@ -312,7 +312,7 @@ export default function AiAdvisorPage() {
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-600 to-blue-500 shadow-lg">
           <Sparkles className="h-7 w-7 text-white" />
         </div>
-        <h1 className="mt-4 text-3xl font-bold text-zinc-900 dark:text-zinc-50">AI Programme Advisor</h1>
+        <h1 className="mt-4 text-3xl font-bold text-zinc-900 dark:text-zinc-50">Smart Career Counselor</h1>
         <p className="mt-2 text-zinc-600 dark:text-zinc-400">
           Your intelligent assistant for discovering programmes, checking requirements, and planning your academic journey.
         </p>
@@ -326,7 +326,7 @@ export default function AiAdvisorPage() {
               <Bot className="h-4 w-4 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">USPA Advisor</p>
+              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">KanSol</p>
               <p className="text-xs text-green-600 dark:text-green-400">● Online</p>
             </div>
           </div>

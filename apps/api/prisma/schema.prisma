@@ -18,59 +18,76 @@ model University {
 }
 
 model AcademicUnit {
-  id           String           @id @default(cuid())
+  id           String   @id @default(cuid())
   universityId String
+  typeId       String
   name         String
   abbreviation String?
-  type         AcademicUnitType
   description  String?
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  university   University       @relation(fields: [universityId], references: [id], onDelete: Cascade)
-  departments  Department[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  university  University       @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  type        AcademicUnitType @relation(fields: [typeId], references: [id])
+  departments Department[]
 
   @@unique([universityId, name])
 }
 
+model AcademicUnitType {
+  id            String         @id @default(cuid())
+  name          String         @unique
+  code          String         @unique
+  description   String?
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  academicUnits AcademicUnit[]
+}
+
 model Department {
-  id             String       @id @default(cuid())
+  id             String   @id @default(cuid())
   academicUnitId String
   name           String
   abbreviation   String?
   description    String?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  academicUnit   AcademicUnit @relation(fields: [academicUnitId], references: [id], onDelete: Cascade)
-  programmes     Programme[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  academicUnit AcademicUnit @relation(fields: [academicUnitId], references: [id], onDelete: Cascade)
+  programmes   Programme[]
 
   @@unique([academicUnitId, name])
 }
 
 model Programme {
-  id           String                 @id @default(cuid())
-  departmentId String
-  code         String                 @unique
-  sourceCode   String?
-  name         String
-  degree       DegreeType
-  level        ProgrammeLevel
-  duration     Int
-  description  String?
-  awardType    String?
-  entryRequirements String?
+  id                  String         @id @default(cuid())
+  departmentId        String
+  degreeId            String
+  code                String         @unique
+  sourceCode          String?
+  name                String
+  level               ProgrammeLevel
+  duration            Int
+  description         String?
+  awardType           String?
+  entryRequirements   String?
   applicationDeadline DateTime?
   applicationStatus   String?
   applicationCycle    String?
   sourceDocument      String?
   sourceImportedAt    DateTime?
-  needsReview         Boolean                @default(false)
+  needsReview         Boolean        @default(false)
   reviewNotes         String?
-  isActive     Boolean                @default(true)
-  isFeatured   Boolean                @default(false)
-  featuredOrder Int?
-  createdAt    DateTime               @default(now())
-  updatedAt    DateTime               @updatedAt
-  department   Department             @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  isActive            Boolean        @default(true)
+  isFeatured          Boolean        @default(false)
+  featuredOrder       Int?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  department      Department               @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  degree          DegreeType               @relation(fields: [degreeId], references: [id])
   requirements    ProgrammeRequirement[]
   admissionRules  ProgrammeAdmissionRule[]
   tuition         Tuition[]
@@ -82,6 +99,18 @@ model Programme {
   @@index([name])
 }
 
+model DegreeType {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  code        String      @unique
+  description String?
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  programmes Programme[]
+}
+
 model Tuition {
   id           String    @id @default(cuid())
   programmeId  String
@@ -91,7 +120,8 @@ model Tuition {
   feePeriod    FeePeriod @default(UNKNOWN)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
-  programme    Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+
+  programme Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
 
   @@unique([programmeId, academicYear])
 }
@@ -103,18 +133,20 @@ model ProgrammeAdmissionRule {
   text        String
   createdAt   DateTime              @default(now())
   updatedAt   DateTime              @updatedAt
-  programme   Programme             @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+
+  programme Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
 
   @@unique([programmeId, category, text])
 }
 
 model Subject {
-  id           String                 @id @default(cuid())
-  name         String                 @unique
-  code         String?
-  level        SubjectLevel
-  createdAt    DateTime               @default(now())
-  updatedAt    DateTime               @updatedAt
+  id        String       @id @default(cuid())
+  name      String       @unique
+  code      String?
+  level     SubjectLevel
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
   requirements ProgrammeRequirement[]
 }
 
@@ -124,93 +156,139 @@ model ProgrammeRequirement {
   subjectId       String
   requirementType RequirementType
   minimumGrade    String?
-  programme       Programme       @relation(fields: [programmeId], references: [id], onDelete: Cascade)
-  subject         Subject         @relation(fields: [subjectId], references: [id])
+
+  programme Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  subject   Subject   @relation(fields: [subjectId], references: [id])
 
   @@unique([programmeId, subjectId])
 }
 
 model Career {
-  id          String            @id @default(cuid())
-  name        String            @unique
+  id          String   @id @default(cuid())
+  name        String   @unique
   description String?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  programmes  ProgrammeCareer[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  programmes ProgrammeCareer[]
 }
 
 model ProgrammeCareer {
-  programmeId  String
-  careerId     String
-  programme    Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
-  career       Career    @relation(fields: [careerId], references: [id])
+  programmeId String
+  careerId    String
+
+  programme Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  career    Career    @relation(fields: [careerId], references: [id])
 
   @@id([programmeId, careerId])
 }
 
 model Keyword {
-  id          String             @id @default(cuid())
-  word        String             @unique
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  programmes  ProgrammeKeyword[]
+  id        String   @id @default(cuid())
+  word      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  programmes ProgrammeKeyword[]
 }
 
 model ProgrammeKeyword {
-  programmeId  String
-  keywordId    String
-  programme    Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
-  keyword      Keyword   @relation(fields: [keywordId], references: [id])
+  programmeId String
+  keywordId   String
+
+  programme Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  keyword   Keyword   @relation(fields: [keywordId], references: [id])
 
   @@id([programmeId, keywordId])
 }
 
 model User {
-  id              String          @id @default(cuid())
-  email           String          @unique
-  passwordHash    String
-  firstName       String
-  lastName        String
-  role            UserRole        @default(VISITOR)
-  isActive        Boolean         @default(true)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         UserRole @default(VISITOR)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
   savedProgrammes SavedProgramme[]
   searchHistory   SearchHistory[]
   announcements   Announcement[]
 }
 
 model SavedProgramme {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   userId      String
   programmeId String
-  createdAt   DateTime  @default(now())
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  programme   Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  programme Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
 
   @@unique([userId, programmeId])
 }
 
 model SearchHistory {
-  id          String   @id @default(cuid())
-  userId      String?
-  query       String
-  filters     Json?
-  createdAt   DateTime @default(now())
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id        String   @id @default(cuid())
+  userId    String?
+  query     String
+  filters   Json?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model AnnouncementCategory {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  slug         String   @unique
+  description  String?
+  displayOrder Int      @default(0)
+  isActive     Boolean  @default(true)
+  icon         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  announcements Announcement[]
 }
 
 model Announcement {
-  id          String    @id @default(cuid())
-  title       String
-  content     String
+  id            String  @id @default(cuid())
+  slug          String  @unique
+  title         String
+  summary       String?
+  content       String
+  featuredImage String?
+
+  categoryId  String?
   programmeId String?
   authorId    String
+
   published   Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  programme   Programme? @relation(fields: [programmeId], references: [id], onDelete: SetNull)
-  author      User      @relation(fields: [authorId], references: [id])
+  publishedAt DateTime?
+
+  applicationCycle    String?
+  applicationStatus   String?
+  applicationDeadline DateTime?
+  applicationUrl      String?
+
+  officialSourceUrl String?
+  source            String?
+  sourceDocument    String?
+  lastVerified      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  category  AnnouncementCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  programme Programme?            @relation(fields: [programmeId], references: [id], onDelete: SetNull)
+  author    User                  @relation(fields: [authorId], references: [id])
+
+  @@index([published, publishedAt])
+  @@index([categoryId])
+  @@index([programmeId])
 }
 
 model GeneralAdmissionRule {
@@ -220,30 +298,6 @@ model GeneralAdmissionRule {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-}
-
-enum AcademicUnitType {
-  FACULTY
-  SCHOOL
-}
-
-enum DegreeType {
-  BSC
-  BA
-  BENG
-  BED
-  LLB
-  MBBS
-  HND
-  DIPLOMA
-  PGD
-  MSC
-  MA
-  MENG
-  PHD
-  CERTIFICATE
-  BTECH
-  HPD
 }
 
 enum ProgrammeLevel {

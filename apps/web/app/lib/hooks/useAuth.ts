@@ -53,6 +53,17 @@ export function useAuth() {
     },
   });
 
+  const updateProfileMutation = useMutation({
+    mutationFn: (input: {
+      firstName: string;
+      lastName: string;
+    }) => api.updateProfile(input),
+
+    onSuccess: (data) => {
+      queryClient.setQueryData(["auth", "profile"], data);
+    },
+  });
+
   const logout = useCallback(() => {
     api.setToken(null);
     queryClient.setQueryData(["auth", "profile"], null);
@@ -65,6 +76,7 @@ export function useAuth() {
     isLoading,
     login: loginMutation,
     register: registerMutation,
+    updateProfile: updateProfileMutation,
     logout,
   };
 }

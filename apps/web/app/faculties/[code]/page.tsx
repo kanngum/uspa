@@ -85,7 +85,11 @@ export default function FacultyDetailPage() {
                             <div>
                               <p className="font-medium text-zinc-900 dark:text-zinc-50">{prog.name}</p>
                               <div className="mt-1 flex items-center gap-2 text-xs text-zinc-500">
-                                <Badge variant="secondary">{prog.degree || "N/A"}</Badge>
+                                <Badge variant="secondary">
+                                  {typeof prog.degree === "object" && prog.degree !== null
+                                    ? prog.degree.name || prog.degree.code || "N/A"
+                                    : prog.degree || "N/A"}
+                                </Badge>
                                 {prog.duration && (
                                   <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{prog.duration} years</span>
                                 )}

@@ -72,10 +72,10 @@ export function UniversitySelector() {
             Welcome to USPA
           </CardTitle>
 
-          <CardDescription className="mx-auto mt-1.5 max-w-md text-[13px] leading-5 text-zinc-500 dark:text-zinc-400">
+          <CardDescription className="mx-auto mt-1.5 max-w-md text-[15px] leading-5 text-zinc-600 dark:text-zinc-400">
             {/*Select your university to discover programmes, check eligibility, and get AI-powered guidance.*/}
-            <span className="mt-1.5 block text-[11px] text-zinc-400 dark:text-zinc-500">
-              Use ↑↓ to navigate, Enter to select, Esc to close
+            <span className="mt-1.5 block text-[11px] text-zinc-400 dark:text-zinc-300">
+              Select your university to discover programmes, check eligibility, and get AI-powered guidance.
             </span>
           </CardDescription>
         </CardHeader>

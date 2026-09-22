@@ -44,12 +44,13 @@ export class ImportService {
   }
 
   async preview(type: string, data: any[]): Promise<ImportValidationResult> {
-    // Preview is same as validate but marks rows as preview mode
     const result = await this.validate(type, data);
+
     result.preview = result.preview.map((row: any) => ({
       ...row,
       _preview: true,
     }));
+
     return result;
   }
 
@@ -84,10 +85,13 @@ export class ImportService {
       : Object.values(data).find((value) => Array.isArray(value));
 
     if (!Array.isArray(rows)) {
-      throw new BadRequestException('Upload payload must contain an array of records');
+      throw new BadRequestException(
+        'Upload payload must contain an array of records',
+      );
     }
 
     const type = this.detectImportType(rows);
+
     if (!type) {
       throw new BadRequestException(
         'Unable to detect import type. Provide a top-level array of objects for faculties, departments, programmes, subjects, requirements, tuition, or careers.',
@@ -99,11 +103,15 @@ export class ImportService {
 
   async quick(type: string, data: any[]): Promise<ImportSummary> {
     const validation = await this.validate(type, data);
+
     if (!validation.valid) {
       throw new BadRequestException(
-        `Import validation failed: ${validation.errors.map((e) => `${e.field}: ${e.message}`).join(', ')}`,
+        `Import validation failed: ${validation.errors
+          .map((e) => `${e.field}: ${e.message}`)
+          .join(', ')}`,
       );
     }
+
     return this.confirm(type, data);
   }
 
@@ -122,6 +130,7 @@ export class ImportService {
       if (sample.subjectId || sample.requirementType) {
         return 'requirements';
       }
+
       return 'programmes';
     }
 
@@ -146,13 +155,23 @@ export class ImportService {
 
   // ==================== FACULTIES ====================
 
-  private async validateFaculties(data: any[]): Promise<ImportValidationResult> {
-    const errors: Array<{ row: number; field: string; message: string }> = [];
+  private async validateFaculties(
+    data: any[],
+  ): Promise<ImportValidationResult> {
+    const errors: Array<{
+      row: number;
+      field: string;
+      message: string;
+    }> = [];
+
     const preview: any[] = [];
+
     const university = await this.prisma.university.findFirst();
 
     if (!university) {
-      throw new BadRequestException('No university found. Create a university first.');
+      throw new BadRequestException(
+        'No university found. Create a university first.',
+      );
     }
 
     for (let i = 0; i < data.length; i++) {
@@ -161,16 +180,30 @@ export class ImportService {
       let rowErrors = 0;
 
       if (!row.name || typeof row.name !== 'string') {
-        errors.push({ row: rowNum, field: 'name', message: 'Name is required' });
+        errors.push({
+          row: rowNum,
+          field: 'name',
+          message: 'Name is required',
+        });
         rowErrors++;
       }
 
       if (row.name) {
         const existing = await this.prisma.academicUnit.findFirst({
-          where: { name: { equals: row.name, mode: 'insensitive' } },
+          where: {
+            name: {
+              equals: row.name,
+              mode: 'insensitive',
+            },
+          },
         });
+
         if (existing) {
-          errors.push({ row: rowNum, field: 'name', message: `"${row.name}" already exists` });
+          errors.push({
+            row: rowNum,
+            field: 'name',
+            message: `"${row.name}" already exists`,
+          });
           rowErrors++;
         }
       }
@@ -195,25 +228,58 @@ export class ImportService {
     };
   }
 
-  private async importFaculties(data: any[]): Promise<ImportSummary> {
+  private async importFaculties(
+    data: any[],
+  ): Promise<ImportSummary> {
     const university = await this.prisma.university.findFirst();
+
+    if (!university) {
+      throw new BadRequestException(
+        'No university found. Create a university first.',
+      );
+    }
+
     const created: string[] = [];
     const errors: Array<{ item: string; reason: string }> = [];
 
     for (const row of data) {
       try {
+        const typeValue = String(row.type || 'FACULTY').trim();
+
+        const academicUnitType =
+          await this.prisma.academicUnitType.findFirst({
+            where: {
+              OR: [
+                { code: typeValue.toUpperCase() },
+                { name: typeValue },
+              ],
+            },
+          });
+
+        if (!academicUnitType) {
+          errors.push({
+            item: row.name,
+            reason: `Academic unit type not found: ${typeValue}`,
+          });
+          continue;
+        }
+
         await this.prisma.academicUnit.create({
           data: {
             name: row.name,
             abbreviation: row.abbreviation || '',
             description: row.description || '',
-            type: row.type || 'FACULTY',
-            universityId: university!.id,
+            typeId: academicUnitType.id,
+            universityId: university.id,
           },
         });
+
         created.push(row.name);
       } catch (err: any) {
-        errors.push({ item: row.name, reason: err.message });
+        errors.push({
+          item: row.name,
+          reason: err.message,
+        });
       }
     }
 
@@ -228,8 +294,15 @@ export class ImportService {
 
   // ==================== DEPARTMENTS ====================
 
-  private async validateDepartments(data: any[]): Promise<ImportValidationResult> {
-    const errors: Array<{ row: number; field: string; message: string }> = [];
+  private async validateDepartments(
+    data: any[],
+  ): Promise<ImportValidationResult> {
+    const errors: Array<{
+      row: number;
+      field: string;
+      message: string;
+    }> = [];
+
     const preview: any[] = [];
     const faculties = await this.prisma.academicUnit.findMany();
 
@@ -239,21 +312,39 @@ export class ImportService {
       let rowErrors = 0;
 
       if (!row.name) {
-        errors.push({ row: rowNum, field: 'name', message: 'Name is required' });
+        errors.push({
+          row: rowNum,
+          field: 'name',
+          message: 'Name is required',
+        });
         rowErrors++;
       }
 
       if (!row.facultyId && !row.facultyName) {
-        errors.push({ row: rowNum, field: 'facultyId/facultyName', message: 'Faculty identifier is required' });
+        errors.push({
+          row: rowNum,
+          field: 'facultyId/facultyName',
+          message: 'Faculty identifier is required',
+        });
         rowErrors++;
       }
 
       const faculty = row.facultyId
         ? faculties.find((f) => f.id === row.facultyId)
-        : faculties.find((f) => f.name.toLowerCase() === (row.facultyName || '').toLowerCase());
+        : faculties.find(
+            (f) =>
+              f.name.toLowerCase() ===
+              (row.facultyName || '').toLowerCase(),
+          );
 
       if (!faculty && (row.facultyId || row.facultyName)) {
-        errors.push({ row: rowNum, field: 'facultyId', message: `Faculty not found: ${row.facultyId || row.facultyName}` });
+        errors.push({
+          row: rowNum,
+          field: 'facultyId',
+          message: `Faculty not found: ${
+            row.facultyId || row.facultyName
+          }`,
+        });
         rowErrors++;
       }
 
@@ -263,7 +354,12 @@ export class ImportService {
         name: row.name || '',
         abbreviation: row.abbreviation || '',
         description: row.description || '',
-        faculty: faculty ? { id: faculty.id, name: faculty.name } : null,
+        faculty: faculty
+          ? {
+              id: faculty.id,
+              name: faculty.name,
+            }
+          : null,
         facultyName: row.facultyName || '',
       });
     }
@@ -278,8 +374,11 @@ export class ImportService {
     };
   }
 
-  private async importDepartments(data: any[]): Promise<ImportSummary> {
+  private async importDepartments(
+    data: any[],
+  ): Promise<ImportSummary> {
     const faculties = await this.prisma.academicUnit.findMany();
+
     const created: string[] = [];
     const errors: Array<{ item: string; reason: string }> = [];
 
@@ -287,10 +386,17 @@ export class ImportService {
       try {
         const faculty = row.facultyId
           ? faculties.find((f) => f.id === row.facultyId)
-          : faculties.find((f) => f.name.toLowerCase() === (row.facultyName || '').toLowerCase());
+          : faculties.find(
+              (f) =>
+                f.name.toLowerCase() ===
+                (row.facultyName || '').toLowerCase(),
+            );
 
         if (!faculty) {
-          errors.push({ item: row.name, reason: 'Faculty not found' });
+          errors.push({
+            item: row.name,
+            reason: 'Faculty not found',
+          });
           continue;
         }
 
@@ -302,9 +408,13 @@ export class ImportService {
             academicUnitId: faculty.id,
           },
         });
+
         created.push(row.name);
       } catch (err: any) {
-        errors.push({ item: row.name, reason: err.message });
+        errors.push({
+          item: row.name,
+          reason: err.message,
+        });
       }
     }
 
@@ -319,26 +429,86 @@ export class ImportService {
 
   // ==================== PROGRAMMES ====================
 
-  private async validateProgrammes(data: any[]): Promise<ImportValidationResult> {
-    const errors: Array<{ row: number; field: string; message: string }> = [];
+  private async validateProgrammes(
+    data: any[],
+  ): Promise<ImportValidationResult> {
+    const errors: Array<{
+      row: number;
+      field: string;
+      message: string;
+    }> = [];
+
     const preview: any[] = [];
-    const departments = await this.prisma.department.findMany({ include: { academicUnit: true } });
+
+    const departments =
+      await this.prisma.department.findMany({
+        include: {
+          academicUnit: true,
+        },
+      });
 
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
       const rowNum = i + 1;
       let rowErrors = 0;
 
-      if (!row.name) { errors.push({ row: rowNum, field: 'name', message: 'Name is required' }); rowErrors++; }
-      if (!row.code) { errors.push({ row: rowNum, field: 'code', message: 'Code is required' }); rowErrors++; }
-      if (!row.degree) { errors.push({ row: rowNum, field: 'degree', message: 'Degree type is required' }); rowErrors++; }
-      if (!row.level) { errors.push({ row: rowNum, field: 'level', message: 'Level is required' }); rowErrors++; }
-      if (!row.duration) { errors.push({ row: rowNum, field: 'duration', message: 'Duration is required' }); rowErrors++; }
+      if (!row.name) {
+        errors.push({
+          row: rowNum,
+          field: 'name',
+          message: 'Name is required',
+        });
+        rowErrors++;
+      }
+
+      if (!row.code) {
+        errors.push({
+          row: rowNum,
+          field: 'code',
+          message: 'Code is required',
+        });
+        rowErrors++;
+      }
+
+      if (!row.degree) {
+        errors.push({
+          row: rowNum,
+          field: 'degree',
+          message: 'Degree type is required',
+        });
+        rowErrors++;
+      }
+
+      if (!row.level) {
+        errors.push({
+          row: rowNum,
+          field: 'level',
+          message: 'Level is required',
+        });
+        rowErrors++;
+      }
+
+      if (!row.duration) {
+        errors.push({
+          row: rowNum,
+          field: 'duration',
+          message: 'Duration is required',
+        });
+        rowErrors++;
+      }
 
       if (row.code) {
-        const existing = await this.prisma.programme.findUnique({ where: { code: row.code } });
+        const existing =
+          await this.prisma.programme.findUnique({
+            where: { code: row.code },
+          });
+
         if (existing) {
-          errors.push({ row: rowNum, field: 'code', message: `Code "${row.code}" already exists` });
+          errors.push({
+            row: rowNum,
+            field: 'code',
+            message: `Code "${row.code}" already exists`,
+          });
           rowErrors++;
         }
       }
@@ -346,7 +516,11 @@ export class ImportService {
       const department = row.departmentId
         ? departments.find((d) => d.id === row.departmentId)
         : row.departmentName
-          ? departments.find((d) => d.name.toLowerCase() === row.departmentName.toLowerCase())
+          ? departments.find(
+              (d) =>
+                d.name.toLowerCase() ===
+                row.departmentName.toLowerCase(),
+            )
           : undefined;
 
       preview.push({
@@ -358,7 +532,13 @@ export class ImportService {
         level: row.level || '',
         duration: row.duration || 0,
         description: row.description || '',
-        department: department ? { id: department.id, name: department.name, faculty: department.academicUnit.name } : null,
+        department: department
+          ? {
+              id: department.id,
+              name: department.name,
+              faculty: department.academicUnit.name,
+            }
+          : null,
         departmentName: row.departmentName || '',
       });
     }
@@ -373,8 +553,12 @@ export class ImportService {
     };
   }
 
-  private async importProgrammes(data: any[]): Promise<ImportSummary> {
-    const departments = await this.prisma.department.findMany();
+  private async importProgrammes(
+    data: any[],
+  ): Promise<ImportSummary> {
+    const departments =
+      await this.prisma.department.findMany();
+
     const created: string[] = [];
     const errors: Array<{ item: string; reason: string }> = [];
 
@@ -382,10 +566,37 @@ export class ImportService {
       try {
         const dept = row.departmentId
           ? departments.find((d) => d.id === row.departmentId)
-          : departments.find((d) => d.name.toLowerCase() === (row.departmentName || '').toLowerCase());
+          : departments.find(
+              (d) =>
+                d.name.toLowerCase() ===
+                (row.departmentName || '').toLowerCase(),
+            );
 
         if (!dept) {
-          errors.push({ item: `${row.code} - ${row.name}`, reason: 'Department not found' });
+          errors.push({
+            item: `${row.code} - ${row.name}`,
+            reason: 'Department not found',
+          });
+          continue;
+        }
+
+        const degreeValue = String(row.degree || '').trim();
+
+        const degreeType =
+          await this.prisma.degreeType.findFirst({
+            where: {
+              OR: [
+                { code: degreeValue.toUpperCase() },
+                { name: degreeValue },
+              ],
+            },
+          });
+
+        if (!degreeType) {
+          errors.push({
+            item: `${row.code} - ${row.name}`,
+            reason: `Degree type not found: ${degreeValue}`,
+          });
           continue;
         }
 
@@ -394,15 +605,19 @@ export class ImportService {
             departmentId: dept.id,
             code: row.code,
             name: row.name,
-            degree: row.degree,
+            degreeId: degreeType.id,
             level: row.level,
             duration: parseInt(row.duration, 10) || 3,
             description: row.description || '',
           },
         });
+
         created.push(`${row.code} - ${row.name}`);
       } catch (err: any) {
-        errors.push({ item: `${row.code} - ${row.name}`, reason: err.message });
+        errors.push({
+          item: `${row.code} - ${row.name}`,
+          reason: err.message,
+        });
       }
     }
 
@@ -417,8 +632,15 @@ export class ImportService {
 
   // ==================== SUBJECTS ====================
 
-  private async validateSubjects(data: any[]): Promise<ImportValidationResult> {
-    const errors: Array<{ row: number; field: string; message: string }> = [];
+  private async validateSubjects(
+    data: any[],
+  ): Promise<ImportValidationResult> {
+    const errors: Array<{
+      row: number;
+      field: string;
+      message: string;
+    }> = [];
+
     const preview: any[] = [];
 
     for (let i = 0; i < data.length; i++) {
@@ -426,19 +648,55 @@ export class ImportService {
       const rowNum = i + 1;
       let rowErrors = 0;
 
-      if (!row.name) { errors.push({ row: rowNum, field: 'name', message: 'Name is required' }); rowErrors++; }
-      if (!row.level) { errors.push({ row: rowNum, field: 'level', message: 'Level (O_LEVEL/A_LEVEL) is required' }); rowErrors++; }
-      if (row.level && !['O_LEVEL', 'A_LEVEL'].includes(row.level.toUpperCase())) {
-        errors.push({ row: rowNum, field: 'level', message: 'Level must be O_LEVEL or A_LEVEL' });
+      if (!row.name) {
+        errors.push({
+          row: rowNum,
+          field: 'name',
+          message: 'Name is required',
+        });
+        rowErrors++;
+      }
+
+      if (!row.level) {
+        errors.push({
+          row: rowNum,
+          field: 'level',
+          message: 'Level (O_LEVEL/A_LEVEL) is required',
+        });
+        rowErrors++;
+      }
+
+      if (
+        row.level &&
+        !['O_LEVEL', 'A_LEVEL'].includes(
+          row.level.toUpperCase(),
+        )
+      ) {
+        errors.push({
+          row: rowNum,
+          field: 'level',
+          message: 'Level must be O_LEVEL or A_LEVEL',
+        });
         rowErrors++;
       }
 
       if (row.name) {
-        const existing = await this.prisma.subject.findFirst({
-          where: { name: { equals: row.name, mode: 'insensitive' } },
-        });
+        const existing =
+          await this.prisma.subject.findFirst({
+            where: {
+              name: {
+                equals: row.name,
+                mode: 'insensitive',
+              },
+            },
+          });
+
         if (existing) {
-          errors.push({ row: rowNum, field: 'name', message: `"${row.name}" already exists` });
+          errors.push({
+            row: rowNum,
+            field: 'name',
+            message: `"${row.name}" already exists`,
+          });
           rowErrors++;
         }
       }
@@ -462,7 +720,9 @@ export class ImportService {
     };
   }
 
-  private async importSubjects(data: any[]): Promise<ImportSummary> {
+  private async importSubjects(
+    data: any[],
+  ): Promise<ImportSummary> {
     const created: string[] = [];
     const errors: Array<{ item: string; reason: string }> = [];
 
@@ -475,9 +735,13 @@ export class ImportService {
             level: row.level.toUpperCase() as any,
           },
         });
+
         created.push(row.name);
       } catch (err: any) {
-        errors.push({ item: row.name, reason: err.message });
+        errors.push({
+          item: row.name,
+          reason: err.message,
+        });
       }
     }
 
@@ -492,11 +756,20 @@ export class ImportService {
 
   // ==================== REQUIREMENTS ====================
 
-  private async validateRequirements(data: any[]): Promise<ImportValidationResult> {
-    const errors: Array<{ row: number; field: string; message: string }> = [];
+  private async validateRequirements(
+    data: any[],
+  ): Promise<ImportValidationResult> {
+    const errors: Array<{
+      row: number;
+      field: string;
+      message: string;
+    }> = [];
+
     const preview: any[] = [];
+
     const subjects = await this.prisma.subject.findMany();
-    const programmes = await this.prisma.programme.findMany();
+    const programmes =
+      await this.prisma.programme.findMany();
 
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
@@ -504,40 +777,71 @@ export class ImportService {
       let rowErrors = 0;
 
       if (!row.programmeCode && !row.programmeId) {
-        errors.push({ row: rowNum, field: 'programme', message: 'Programme code or ID is required' });
+        errors.push({
+          row: rowNum,
+          field: 'programme',
+          message: 'Programme code or ID is required',
+        });
         rowErrors++;
       }
 
       if (!row.subjectName && !row.subjectId) {
-        errors.push({ row: rowNum, field: 'subject', message: 'Subject name or ID is required' });
+        errors.push({
+          row: rowNum,
+          field: 'subject',
+          message: 'Subject name or ID is required',
+        });
         rowErrors++;
       }
 
       const subject = row.subjectId
         ? subjects.find((s) => s.id === row.subjectId)
-        : subjects.find((s) => s.name.toLowerCase() === (row.subjectName || '').toLowerCase());
+        : subjects.find(
+            (s) =>
+              s.name.toLowerCase() ===
+              (row.subjectName || '').toLowerCase(),
+          );
 
       if (!subject && (row.subjectId || row.subjectName)) {
-        errors.push({ row: rowNum, field: 'subject', message: `Subject not found: ${row.subjectId || row.subjectName}` });
+        errors.push({
+          row: rowNum,
+          field: 'subject',
+          message: `Subject not found: ${
+            row.subjectId || row.subjectName
+          }`,
+        });
         rowErrors++;
       }
 
       const programme = row.programmeId
         ? programmes.find((p) => p.id === row.programmeId)
-        : programmes.find((p) => p.code.toLowerCase() === (row.programmeCode || '').toLowerCase());
+        : programmes.find(
+            (p) =>
+              p.code.toLowerCase() ===
+              (row.programmeCode || '').toLowerCase(),
+          );
 
       if (!programme && (row.programmeId || row.programmeCode)) {
-        errors.push({ row: rowNum, field: 'programme', message: `Programme not found: ${row.programmeId || row.programmeCode}` });
+        errors.push({
+          row: rowNum,
+          field: 'programme',
+          message: `Programme not found: ${
+            row.programmeId || row.programmeCode
+          }`,
+        });
         rowErrors++;
       }
 
       preview.push({
         _valid: rowErrors === 0,
         _errors: rowErrors,
-        programmeCode: row.programmeCode || programme?.code || '',
+        programmeCode:
+          row.programmeCode || programme?.code || '',
         programmeName: programme?.name || '',
-        subjectName: subject?.name || row.subjectName || '',
-        requirementType: row.requirementType || 'REQUIRED',
+        subjectName:
+          subject?.name || row.subjectName || '',
+        requirementType:
+          row.requirementType || 'REQUIRED',
         minimumGrade: row.minimumGrade || '',
       });
     }
@@ -552,9 +856,13 @@ export class ImportService {
     };
   }
 
-  private async importRequirements(data: any[]): Promise<ImportSummary> {
+  private async importRequirements(
+    data: any[],
+  ): Promise<ImportSummary> {
     const subjects = await this.prisma.subject.findMany();
-    const programmes = await this.prisma.programme.findMany();
+    const programmes =
+      await this.prisma.programme.findMany();
+
     const created: string[] = [];
     const errors: Array<{ item: string; reason: string }> = [];
 
@@ -562,14 +870,27 @@ export class ImportService {
       try {
         const subject = row.subjectId
           ? subjects.find((s) => s.id === row.subjectId)
-          : subjects.find((s) => s.name.toLowerCase() === (row.subjectName || '').toLowerCase());
+          : subjects.find(
+              (s) =>
+                s.name.toLowerCase() ===
+                (row.subjectName || '').toLowerCase(),
+            );
 
         const programme = row.programmeId
           ? programmes.find((p) => p.id === row.programmeId)
-          : programmes.find((p) => p.code.toLowerCase() === (row.programmeCode || '').toLowerCase());
+          : programmes.find(
+              (p) =>
+                p.code.toLowerCase() ===
+                (row.programmeCode || '').toLowerCase(),
+            );
 
         if (!subject || !programme) {
-          errors.push({ item: `${row.programmeCode || row.programmeId} -> ${row.subjectName || row.subjectId}`, reason: 'Subject or Programme not found' });
+          errors.push({
+            item: `${
+              row.programmeCode || row.programmeId
+            } -> ${row.subjectName || row.subjectId}`,
+            reason: 'Subject or Programme not found',
+          });
           continue;
         }
 
@@ -577,13 +898,23 @@ export class ImportService {
           data: {
             programmeId: programme.id,
             subjectId: subject.id,
-            requirementType: row.requirementType?.toUpperCase() || 'REQUIRED',
+            requirementType:
+              row.requirementType?.toUpperCase() ||
+              'REQUIRED',
             minimumGrade: row.minimumGrade || null,
           },
         });
-        created.push(`${programme.code} -> ${subject.name}`);
+
+        created.push(
+          `${programme.code} -> ${subject.name}`,
+        );
       } catch (err: any) {
-        errors.push({ item: `${row.programmeCode || row.programmeId} -> ${row.subjectName || row.subjectId}`, reason: err.message });
+        errors.push({
+          item: `${
+            row.programmeCode || row.programmeId
+          } -> ${row.subjectName || row.subjectId}`,
+          reason: err.message,
+        });
       }
     }
 
@@ -598,10 +929,19 @@ export class ImportService {
 
   // ==================== TUITION ====================
 
-  private async validateTuition(data: any[]): Promise<ImportValidationResult> {
-    const errors: Array<{ row: number; field: string; message: string }> = [];
+  private async validateTuition(
+    data: any[],
+  ): Promise<ImportValidationResult> {
+    const errors: Array<{
+      row: number;
+      field: string;
+      message: string;
+    }> = [];
+
     const preview: any[] = [];
-    const programmes = await this.prisma.programme.findMany();
+
+    const programmes =
+      await this.prisma.programme.findMany();
 
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
@@ -609,25 +949,56 @@ export class ImportService {
       let rowErrors = 0;
 
       if (!row.programmeCode && !row.programmeId) {
-        errors.push({ row: rowNum, field: 'programme', message: 'Programme code or ID is required' });
+        errors.push({
+          row: rowNum,
+          field: 'programme',
+          message: 'Programme code or ID is required',
+        });
         rowErrors++;
       }
-      if (!row.academicYear) { errors.push({ row: rowNum, field: 'academicYear', message: 'Academic year is required' }); rowErrors++; }
-      if (!row.amount && row.amount !== 0) { errors.push({ row: rowNum, field: 'amount', message: 'Amount is required' }); rowErrors++; }
+
+      if (!row.academicYear) {
+        errors.push({
+          row: rowNum,
+          field: 'academicYear',
+          message: 'Academic year is required',
+        });
+        rowErrors++;
+      }
+
+      if (!row.amount && row.amount !== 0) {
+        errors.push({
+          row: rowNum,
+          field: 'amount',
+          message: 'Amount is required',
+        });
+        rowErrors++;
+      }
 
       const programme = row.programmeId
         ? programmes.find((p) => p.id === row.programmeId)
-        : programmes.find((p) => p.code.toLowerCase() === (row.programmeCode || '').toLowerCase());
+        : programmes.find(
+            (p) =>
+              p.code.toLowerCase() ===
+              (row.programmeCode || '').toLowerCase(),
+          );
 
       if (!programme && (row.programmeId || row.programmeCode)) {
-        errors.push({ row: rowNum, field: 'programme', message: `Programme not found: ${row.programmeId || row.programmeCode}` });
+        errors.push({
+          row: rowNum,
+          field: 'programme',
+          message: `Programme not found: ${
+            row.programmeId || row.programmeCode
+          }`,
+        });
         rowErrors++;
       }
 
       preview.push({
         _valid: rowErrors === 0,
         _errors: rowErrors,
-        programmeCode: programme?.code || row.programmeCode || '',
+        programmeCode:
+          programme?.code || row.programmeCode || '',
         programmeName: programme?.name || '',
         academicYear: row.academicYear || '',
         amount: row.amount || 0,
@@ -645,8 +1016,12 @@ export class ImportService {
     };
   }
 
-  private async importTuition(data: any[]): Promise<ImportSummary> {
-    const programmes = await this.prisma.programme.findMany();
+  private async importTuition(
+    data: any[],
+  ): Promise<ImportSummary> {
+    const programmes =
+      await this.prisma.programme.findMany();
+
     const created: string[] = [];
     const errors: Array<{ item: string; reason: string }> = [];
 
@@ -654,10 +1029,17 @@ export class ImportService {
       try {
         const programme = row.programmeId
           ? programmes.find((p) => p.id === row.programmeId)
-          : programmes.find((p) => p.code.toLowerCase() === (row.programmeCode || '').toLowerCase());
+          : programmes.find(
+              (p) =>
+                p.code.toLowerCase() ===
+                (row.programmeCode || '').toLowerCase(),
+            );
 
         if (!programme) {
-          errors.push({ item: `${row.programmeCode} - ${row.academicYear}`, reason: 'Programme not found' });
+          errors.push({
+            item: `${row.programmeCode} - ${row.academicYear}`,
+            reason: 'Programme not found',
+          });
           continue;
         }
 
@@ -669,9 +1051,15 @@ export class ImportService {
             currency: row.currency || 'XAF',
           },
         });
-        created.push(`${programme.code} (${row.academicYear})`);
+
+        created.push(
+          `${programme.code} (${row.academicYear})`,
+        );
       } catch (err: any) {
-        errors.push({ item: `${row.programmeCode} - ${row.academicYear}`, reason: err.message });
+        errors.push({
+          item: `${row.programmeCode} - ${row.academicYear}`,
+          reason: err.message,
+        });
       }
     }
 
@@ -686,8 +1074,15 @@ export class ImportService {
 
   // ==================== CAREERS ====================
 
-  private async validateCareers(data: any[]): Promise<ImportValidationResult> {
-    const errors: Array<{ row: number; field: string; message: string }> = [];
+  private async validateCareers(
+    data: any[],
+  ): Promise<ImportValidationResult> {
+    const errors: Array<{
+      row: number;
+      field: string;
+      message: string;
+    }> = [];
+
     const preview: any[] = [];
 
     for (let i = 0; i < data.length; i++) {
@@ -695,14 +1090,32 @@ export class ImportService {
       const rowNum = i + 1;
       let rowErrors = 0;
 
-      if (!row.name) { errors.push({ row: rowNum, field: 'name', message: 'Name is required' }); rowErrors++; }
+      if (!row.name) {
+        errors.push({
+          row: rowNum,
+          field: 'name',
+          message: 'Name is required',
+        });
+        rowErrors++;
+      }
 
       if (row.name) {
-        const existing = await this.prisma.career.findFirst({
-          where: { name: { equals: row.name, mode: 'insensitive' } },
-        });
+        const existing =
+          await this.prisma.career.findFirst({
+            where: {
+              name: {
+                equals: row.name,
+                mode: 'insensitive',
+              },
+            },
+          });
+
         if (existing) {
-          errors.push({ row: rowNum, field: 'name', message: `"${row.name}" already exists` });
+          errors.push({
+            row: rowNum,
+            field: 'name',
+            message: `"${row.name}" already exists`,
+          });
           rowErrors++;
         }
       }
@@ -725,18 +1138,27 @@ export class ImportService {
     };
   }
 
-  private async importCareers(data: any[]): Promise<ImportSummary> {
+  private async importCareers(
+    data: any[],
+  ): Promise<ImportSummary> {
     const created: string[] = [];
     const errors: Array<{ item: string; reason: string }> = [];
 
     for (const row of data) {
       try {
         await this.prisma.career.create({
-          data: { name: row.name, description: row.description || '' },
+          data: {
+            name: row.name,
+            description: row.description || '',
+          },
         });
+
         created.push(row.name);
       } catch (err: any) {
-        errors.push({ item: row.name, reason: err.message });
+        errors.push({
+          item: row.name,
+          reason: err.message,
+        });
       }
     }
 
@@ -749,4 +1171,3 @@ export class ImportService {
     };
   }
 }
-

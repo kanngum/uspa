@@ -1,4 +1,4 @@
-import {
+﻿import {
   Body,
   Controller,
   Delete,
@@ -217,6 +217,11 @@ export class AdminController {
   }
 
   // ==================== UNIVERSITY MANAGEMENT ====================
+  @Get('universities')
+  async getAllUniversities() {
+    const universities = await this.adminService.getAllUniversities();
+    return { success: true, data: universities };
+  }
 
   @Post('universities')
   async createUniversity(@Body() input: { name: string; abbreviation: string; description?: string; website?: string }) {
@@ -237,6 +242,17 @@ export class AdminController {
   }
 
   // ==================== FACULTY/DEPARTMENT MANAGEMENT ====================
+  @Get('academic-unit-types')
+async getAcademicUnitTypes() {
+  const types = await this.adminService.getAcademicUnitTypes();
+  return { success: true, data: types };
+}
+
+@Get('faculties')
+async getAllFaculties(@Query('universityId') universityId?: string) {
+  const faculties = await this.adminService.getAllFaculties(universityId);
+  return { success: true, data: faculties };
+}
 
   @Post('faculties')
   async createFaculty(@Body() input: any) {
@@ -256,19 +272,27 @@ export class AdminController {
     return { success: true, data: result };
   }
 
-  @Get('departments')
-  async getAllDepartments(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('search') search?: string,
-  ) {
-    const data = await this.adminService.getAllDepartments(
-      page ? parseInt(page, 10) : 1,
-      limit ? parseInt(limit, 10) : 200,
-      search,
-    );
-    return { success: true, ...data };
-  }
+ @Get('departments')
+async getAllDepartments(
+  @Query('page') page?: string,
+  @Query('limit') limit?: string,
+  @Query('search') search?: string,
+  @Query('academicUnitId') academicUnitId?: string,
+  @Query('universityId') universityId?: string,
+) {
+  const data = await this.adminService.getAllDepartments(
+    page ? parseInt(page, 10) : 1,
+    limit ? parseInt(limit, 10) : 200,
+    search,
+    academicUnitId,
+    universityId,
+  );
+
+  return {
+    success: true,
+    ...data,
+  };
+}
 
   @Post('departments')
   async createDepartment(@Body() input: any) {
@@ -467,35 +491,133 @@ export class AdminController {
 
   // ==================== ANNOUNCEMENTS ====================
 
-  @Post('announcements')
-  async createAnnouncement(
-    @Body() input: { title: string; content: string; programmeId?: string },
-    @Request() req: any,
-  ) {
-    const announcement = await this.adminService.createAnnouncement({
-      ...input,
-      authorId: req.user.sub,
-    });
-    return { success: true, data: announcement };
-  }
+@Post('announcements')
+async createAnnouncement(
+  @Body()
+  input: {
+    title: string;
+    summary?: string;
+    content: string;
+    featuredImage?: string;
+    slug?: string;
+    categoryId?: string;
+    programmeId?: string;
+    applicationCycle?: string;
+    applicationStatus?: string;
+    applicationDeadline?: string;
+    applicationUrl?: string;
+    officialSourceUrl?: string;
+    source?: string;
+    sourceDocument?: string;
+    lastVerified?: string;
+    published?: boolean;
+  },
+  @Request() req: any,
+) {
+  const announcement = await this.adminService.createAnnouncement({
+    ...input,
+    authorId: req.user.sub,
+  });
 
-  @Get('announcements')
-  async getAnnouncements(@Query('published') published?: string) {
-    const announcements = await this.adminService.getAnnouncements(
-      published !== undefined ? published === 'true' : undefined,
-    );
-    return { success: true, data: announcements };
-  }
+  return { success: true, data: announcement };
+}
 
-  @Patch('announcements/:id/toggle')
-  async toggleAnnouncement(@Param('id') id: string) {
-    const announcement = await this.adminService.toggleAnnouncement(id);
-    return { success: true, data: announcement };
-  }
+@Get('announcements')
+async getAnnouncements(@Query('published') published?: string) {
+  const announcements = await this.adminService.getAnnouncements(
+    published !== undefined ? published === 'true' : undefined,
+  );
 
-  @Delete('announcements/:id')
-  async deleteAnnouncement(@Param('id') id: string) {
-    const result = await this.adminService.deleteAnnouncement(id);
-    return { success: true, data: result };
-  }
+  return { success: true, data: announcements };
+}
+
+@Patch('announcements/:id/toggle')
+async toggleAnnouncement(@Param('id') id: string) {
+  const announcement = await this.adminService.toggleAnnouncement(id);
+
+  return { success: true, data: announcement };
+}
+
+@Delete('announcements/:id')
+async deleteAnnouncement(@Param('id') id: string) {
+  const result = await this.adminService.deleteAnnouncement(id);
+
+  return { success: true, data: result };
+}
+
+@Put('announcements/:id')
+async updateAnnouncement(
+  @Param('id') id: string,
+  @Body()
+  input: {
+    title?: string;
+    summary?: string;
+    content?: string;
+    featuredImage?: string;
+    slug?: string;
+    categoryId?: string;
+    programmeId?: string;
+    applicationCycle?: string;
+    applicationStatus?: string;
+    applicationDeadline?: string;
+    applicationUrl?: string;
+    officialSourceUrl?: string;
+    source?: string;
+    sourceDocument?: string;
+    lastVerified?: string;
+    published?: boolean;
+  },
+) {
+  const announcement = await this.adminService.updateAnnouncement(
+    id,
+    input,
+  );
+
+  return {
+    success: true,
+    data: announcement,
+  };
+}
+
+@Get('announcement-categories')
+async getAnnouncementCategories() {
+  const categories =
+    await this.adminService.getAnnouncementCategories();
+
+  return {
+    success: true,
+    data: categories,
+  };
+}
+
+@Post('announcement-categories')
+async createAnnouncementCategory(
+  @Body()
+  input: {
+    name: string;
+    description?: string;
+    slug?: string;
+    displayOrder?: number;
+    icon?: string;
+  },
+) {
+  const category =
+    await this.adminService.createAnnouncementCategory(input);
+
+  return {
+    success: true,
+    data: category,
+  };
+}
+
+@Patch('announcement-categories/:id/toggle')
+async toggleAnnouncementCategory(@Param('id') id: string) {
+  const category =
+    await this.adminService.toggleAnnouncementCategory(id);
+
+  return {
+    success: true,
+    data: category,
+  };
+}
 }

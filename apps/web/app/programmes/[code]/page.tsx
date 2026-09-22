@@ -126,7 +126,14 @@ export default function ProgrammeDetailPage() {
           {/* Header */}
           <div className="mb-6">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="info">{programme.degree}</Badge>
+              <Badge variant="info">
+               {typeof programme.degree === "object" &&
+              programme.degree !== null
+              ? programme.degree.name ||
+               programme.degree.code ||
+                "N/A"
+              : programme.degree || "N/A"}
+             </Badge>
               <Badge variant="secondary">{programme.level?.replace(/_/g, " ")}</Badge>
               <span className="text-xs text-zinc-400">{programme.sourceCode || programme.code}</span>
             </div>
@@ -508,7 +515,16 @@ export default function ProgrammeDetailPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {[
-                { label: "Degree Type", value: programme.degree },
+                {
+                  label: "Degree Type",
+                  value:
+                     typeof programme.degree === "object" &&
+                     programme.degree !== null
+                      ? programme.degree.name ||
+                        programme.degree.code ||
+                       "N/A"
+                      : programme.degree || "N/A",
+                },
                 { label: "Level", value: programme.level?.replace(/_/g, " ") },
                 { label: "Duration", value: `${programme.duration} years` },
                 { label: "Faculty", value: facultyName },

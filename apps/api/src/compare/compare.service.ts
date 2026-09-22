@@ -15,10 +15,21 @@ export class CompareService {
     const programmes = await this.prisma.programme.findMany({
       where: { id: { in: programmeIds } },
       include: {
+        degree: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+          },
+        },
         department: {
           include: {
             academicUnit: {
-              select: { id: true, name: true, abbreviation: true },
+              select: {
+                id: true,
+                name: true,
+                abbreviation: true,
+              },
             },
           },
         },
@@ -39,6 +50,7 @@ export class CompareService {
     if (programmes.length !== programmeIds.length) {
       const foundIds = programmes.map((p) => p.id);
       const missing = programmeIds.filter((id) => !foundIds.includes(id));
+
       throw new NotFoundException(
         `Programmes not found: ${missing.join(', ')}`,
       );
@@ -59,7 +71,7 @@ export class CompareService {
       },
       {
         attribute: 'Degree',
-        values: programmes.map((p) => p.degree),
+        values: programmes.map((p) => p.degree.name),
       },
       {
         attribute: 'Level',
