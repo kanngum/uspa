@@ -863,12 +863,181 @@ async createAdminFaculty(input: any) {
   }
 
   // Admin - Universities
-    async getAdminUniversities() {
+  async getAdminUniversities() {
     return this.request<{ success: boolean; data: any[] }>(
       '/admin/universities',
     );
   }
-async createAdminUniversity(input: {
+
+  async getUniversityAdmissionRules(universityId: string) {
+    return this.request<{ success: boolean; data: any[] }>(
+      `/admin/universities/${encodeURIComponent(universityId)}/admission-rules`,
+    );
+  }
+
+  async createUniversityAdmissionRule(universityId: string, input: any) {
+    return this.request<{ success: boolean; data: any }>(
+      `/admin/universities/${encodeURIComponent(universityId)}/admission-rules`,
+      {
+        method: 'POST',
+        body: JSON.stringify(input),
+      },
+    );
+  }
+
+  async updateUniversityAdmissionRule(
+    universityId: string,
+    id: string,
+    input: any,
+  ) {
+    return this.request<{ success: boolean; data: any }>(
+      `/admin/universities/${encodeURIComponent(universityId)}/admission-rules/${encodeURIComponent(id)}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(input),
+      },
+    );
+  }
+
+  async deleteUniversityAdmissionRule(
+    universityId: string,
+    id: string,
+  ) {
+    return this.request<{ success: boolean; data: any }>(
+      `/admin/universities/${encodeURIComponent(universityId)}/admission-rules/${encodeURIComponent(id)}`,
+      {
+        method: 'DELETE',
+      },
+    );
+  }
+
+  async getAcademicUnitAdmissionRules(academicUnitId: string) {
+    return this.request<{ success: boolean; data: any[] }>(
+      `/admin/faculties/${encodeURIComponent(academicUnitId)}/admission-rules`,
+    );
+  }
+
+  async createAcademicUnitAdmissionRule(academicUnitId: string, input: any) {
+    return this.request<{ success: boolean; data: any }>(
+      `/admin/faculties/${encodeURIComponent(academicUnitId)}/admission-rules`,
+      {
+        method: 'POST',
+        body: JSON.stringify(input),
+      },
+    );
+  }
+
+  async updateAcademicUnitAdmissionRule(
+    academicUnitId: string,
+    id: string,
+    input: any,
+  ) {
+    return this.request<{ success: boolean; data: any }>(
+      `/admin/faculties/${encodeURIComponent(academicUnitId)}/admission-rules/${encodeURIComponent(id)}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(input),
+      },
+    );
+  }
+
+  async deleteAcademicUnitAdmissionRule(
+    academicUnitId: string,
+    id: string,
+  ) {
+    return this.request<{ success: boolean; data: any }>(
+      `/admin/faculties/${encodeURIComponent(academicUnitId)}/admission-rules/${encodeURIComponent(id)}`,
+      {
+        method: 'DELETE',
+      },
+    );
+  }
+
+  async getDepartmentAdmissionRules(departmentId: string) {
+    return this.request<{ success: boolean; data: any[] }>(
+      `/admin/departments/${encodeURIComponent(departmentId)}/admission-rules`,
+    );
+  }
+
+  async createDepartmentAdmissionRule(departmentId: string, input: any) {
+    return this.request<{ success: boolean; data: any }>(
+      `/admin/departments/${encodeURIComponent(departmentId)}/admission-rules`,
+      {
+        method: 'POST',
+        body: JSON.stringify(input),
+      },
+    );
+  }
+
+  async updateDepartmentAdmissionRule(
+    departmentId: string,
+    id: string,
+    input: any,
+  ) {
+    return this.request<{ success: boolean; data: any }>(
+      `/admin/departments/${encodeURIComponent(departmentId)}/admission-rules/${encodeURIComponent(id)}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(input),
+      },
+    );
+  }
+
+  async deleteDepartmentAdmissionRule(
+    departmentId: string,
+    id: string,
+  ) {
+    return this.request<{ success: boolean; data: any }>(
+      `/admin/departments/${encodeURIComponent(departmentId)}/admission-rules/${encodeURIComponent(id)}`,
+      {
+        method: 'DELETE',
+      },
+    );
+  }
+
+  async getProgrammeAdmissionRules(programmeId: string) {
+    return this.request<{ success: boolean; data: any[] }>(
+      `/admin/programmes/${encodeURIComponent(programmeId)}/admission-rules`,
+    );
+  }
+
+  async createProgrammeAdmissionRule(programmeId: string, input: any) {
+    return this.request<{ success: boolean; data: any }>(
+      `/admin/programmes/${encodeURIComponent(programmeId)}/admission-rules`,
+      {
+        method: 'POST',
+        body: JSON.stringify(input),
+      },
+    );
+  }
+
+  async updateProgrammeAdmissionRule(
+    programmeId: string,
+    id: string,
+    input: any,
+  ) {
+    return this.request<{ success: boolean; data: any }>(
+      `/admin/programmes/${encodeURIComponent(programmeId)}/admission-rules/${encodeURIComponent(id)}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(input),
+      },
+    );
+  }
+
+  async deleteProgrammeAdmissionRule(
+    programmeId: string,
+    id: string,
+  ) {
+    return this.request<{ success: boolean; data: any }>(
+      `/admin/programmes/${encodeURIComponent(programmeId)}/admission-rules/${encodeURIComponent(id)}`,
+      {
+        method: 'DELETE',
+      },
+    );
+  }
+
+  async createAdminUniversity(input: {
     name: string;
     abbreviation: string;
     description?: string;
@@ -1334,6 +1503,36 @@ async createAdminUniversity(input: {
     }>(`/programmes/${programmeId}/requirements/bulk`, {
       method: 'POST',
       body: JSON.stringify(inputs),
+    });
+  }
+    async recordSearchHistory(input: {
+    query?: string;
+    filters?: Record<string, unknown>;
+  }) {
+    return this.request<{
+      success: boolean;
+      data: any;
+    }>('/search-history', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async getSearchHistory(limit = 20) {
+    return this.request<{
+      success: boolean;
+      data: any[];
+    }>(`/search-history?limit=${limit}`);
+  }
+
+  async clearSearchHistory() {
+    return this.request<{
+      success: boolean;
+      data: {
+        deletedCount: number;
+      };
+    }>('/search-history', {
+      method: 'DELETE',
     });
   }
 

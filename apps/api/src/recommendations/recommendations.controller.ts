@@ -11,10 +11,12 @@ export class RecommendationsController {
   async getSimilar(
     @Param('programmeId') programmeId: string,
     @Query('limit') limit?: string,
+    @Query('universityId') universityId?: string,
   ) {
     const programmes = await this.recommendationsService.getSimilarProgrammes(
       programmeId,
       limit ? parseInt(limit, 10) : 5,
+      universityId,
     );
     return { success: true, data: programmes };
   }
@@ -23,11 +25,13 @@ export class RecommendationsController {
   async byCareer(
     @Query('q') careerName: string,
     @Query('limit') limit?: string,
+    @Query('universityId') universityId?: string,
   ) {
     const programmes =
       await this.recommendationsService.getCareerRecommendations(
         careerName,
         limit ? parseInt(limit, 10) : 10,
+        universityId,
       );
     return { success: true, data: programmes };
   }
@@ -36,12 +40,14 @@ export class RecommendationsController {
   async bySubjects(
     @Query('subjectIds') subjectIds: string,
     @Query('limit') limit?: string,
+    @Query('universityId') universityId?: string,
   ) {
     const ids = subjectIds.split(',');
     const programmes =
       await this.recommendationsService.getSubjectRecommendations(
         ids,
         limit ? parseInt(limit, 10) : 10,
+        universityId,
       );
     return { success: true, data: programmes };
   }
@@ -50,12 +56,14 @@ export class RecommendationsController {
   async alternatives(
     @Query('missingSubjectIds') missingSubjectIds: string,
     @Query('limit') limit?: string,
+    @Query('universityId') universityId?: string,
   ) {
     const ids = missingSubjectIds.split(',');
     const programmes =
       await this.recommendationsService.getAlternativeProgrammes(
         ids,
         limit ? parseInt(limit, 10) : 5,
+        universityId,
       );
     return { success: true, data: programmes };
   }

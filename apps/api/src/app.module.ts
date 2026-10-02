@@ -18,6 +18,7 @@ import { AcademicUnitsModule } from './academic-units/academic-units.module';
 import { ImportModule } from './import/import.module';
 import { UniversitiesModule } from './universities/universities.module';
 import { AnnouncementsModule } from './announcements/announcements.module';
+import { SearchHistoryModule } from './search-history/search-history.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { AnnouncementsModule } from './announcements/announcements.module';
     ImportModule,
     UniversitiesModule,
     AnnouncementsModule,
+    SearchHistoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -469,6 +469,138 @@ async getAllDepartments(
     return { success: true, data: result };
   }
 
+  @Get('universities/:universityId/admission-rules')
+  async getUniversityAdmissionRules(@Param('universityId') universityId: string) {
+    const data = await this.adminService.getUniversityAdmissionRules(universityId);
+    return { success: true, data };
+  }
+
+  @Post('universities/:universityId/admission-rules')
+  async createUniversityAdmissionRule(
+    @Param('universityId') universityId: string,
+    @Body() input: { category: string; title: string; description: string; subjectId?: string | null; minimumGrade?: string | null; minimumCount?: number | null },
+  ) {
+    const rule = await this.adminService.createUniversityAdmissionRule({
+      universityId,
+      ...input,
+    });
+    return { success: true, data: rule };
+  }
+
+  @Put('universities/:universityId/admission-rules/:id')
+  async updateUniversityAdmissionRule(
+    @Param('id') id: string,
+    @Body() input: { category?: string; title?: string; description?: string; subjectId?: string | null; minimumGrade?: string | null; minimumCount?: number | null },
+  ) {
+    const rule = await this.adminService.updateUniversityAdmissionRule(id, input);
+    return { success: true, data: rule };
+  }
+
+  @Delete('universities/:universityId/admission-rules/:id')
+  async deleteUniversityAdmissionRule(@Param('id') id: string) {
+    const result = await this.adminService.deleteUniversityAdmissionRule(id);
+    return { success: true, data: result };
+  }
+
+  @Get('faculties/:academicUnitId/admission-rules')
+  async getAcademicUnitAdmissionRules(@Param('academicUnitId') academicUnitId: string) {
+    const data = await this.adminService.getAcademicUnitAdmissionRules(academicUnitId);
+    return { success: true, data };
+  }
+
+  @Post('faculties/:academicUnitId/admission-rules')
+  async createAcademicUnitAdmissionRule(
+    @Param('academicUnitId') academicUnitId: string,
+    @Body() input: { category: string; title: string; description: string; subjectId?: string | null; minimumGrade?: string | null; minimumCount?: number | null },
+  ) {
+    const rule = await this.adminService.createAcademicUnitAdmissionRule({
+      academicUnitId,
+      ...input,
+    });
+    return { success: true, data: rule };
+  }
+
+  @Put('faculties/:academicUnitId/admission-rules/:id')
+  async updateAcademicUnitAdmissionRule(
+    @Param('id') id: string,
+    @Body() input: { category?: string; title?: string; description?: string; subjectId?: string | null; minimumGrade?: string | null; minimumCount?: number | null },
+  ) {
+    const rule = await this.adminService.updateAcademicUnitAdmissionRule(id, input);
+    return { success: true, data: rule };
+  }
+
+  @Delete('faculties/:academicUnitId/admission-rules/:id')
+  async deleteAcademicUnitAdmissionRule(@Param('id') id: string) {
+    const result = await this.adminService.deleteAcademicUnitAdmissionRule(id);
+    return { success: true, data: result };
+  }
+
+  @Get('departments/:departmentId/admission-rules')
+  async getDepartmentAdmissionRules(@Param('departmentId') departmentId: string) {
+    const data = await this.adminService.getDepartmentAdmissionRules(departmentId);
+    return { success: true, data };
+  }
+
+  @Post('departments/:departmentId/admission-rules')
+  async createDepartmentAdmissionRule(
+    @Param('departmentId') departmentId: string,
+    @Body() input: { category: string; title: string; description: string; subjectId?: string | null; minimumGrade?: string | null; minimumCount?: number | null },
+  ) {
+    const rule = await this.adminService.createDepartmentAdmissionRule({
+      departmentId,
+      ...input,
+    });
+    return { success: true, data: rule };
+  }
+
+  @Put('departments/:departmentId/admission-rules/:id')
+  async updateDepartmentAdmissionRule(
+    @Param('id') id: string,
+    @Body() input: { category?: string; title?: string; description?: string; subjectId?: string | null; minimumGrade?: string | null; minimumCount?: number | null },
+  ) {
+    const rule = await this.adminService.updateDepartmentAdmissionRule(id, input);
+    return { success: true, data: rule };
+  }
+
+  @Delete('departments/:departmentId/admission-rules/:id')
+  async deleteDepartmentAdmissionRule(@Param('id') id: string) {
+    const result = await this.adminService.deleteDepartmentAdmissionRule(id);
+    return { success: true, data: result };
+  }
+
+  @Get('programmes/:programmeId/admission-rules')
+  async getProgrammeAdmissionRules(@Param('programmeId') programmeId: string) {
+    const data = await this.adminService.getProgrammeAdmissionRules(programmeId);
+    return { success: true, data };
+  }
+
+  @Post('programmes/:programmeId/admission-rules')
+  async createProgrammeAdmissionRule(
+    @Param('programmeId') programmeId: string,
+    @Body() input: { category: string; text: string },
+  ) {
+    const rule = await this.adminService.createProgrammeAdmissionRule({
+      programmeId,
+      ...input,
+    });
+    return { success: true, data: rule };
+  }
+
+  @Put('programmes/:programmeId/admission-rules/:id')
+  async updateProgrammeAdmissionRule(
+    @Param('id') id: string,
+    @Body() input: { category?: string; text?: string },
+  ) {
+    const rule = await this.adminService.updateProgrammeAdmissionRule(id, input);
+    return { success: true, data: rule };
+  }
+
+  @Delete('programmes/:programmeId/admission-rules/:id')
+  async deleteProgrammeAdmissionRule(@Param('id') id: string) {
+    const result = await this.adminService.deleteProgrammeAdmissionRule(id);
+    return { success: true, data: result };
+  }
+
   // ==================== DUPLICATE DETECTION ====================
 
   @Get('duplicates/faculties')

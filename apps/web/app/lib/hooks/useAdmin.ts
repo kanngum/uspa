@@ -42,7 +42,12 @@ export function useUserStats() {
 
 // ==================== PROGRAMMES ====================
 
-export function useAdminProgrammes(page = 1, limit = 20, search?: string, facultyId?: string) {
+export function useAdminProgrammes(
+  page = 1,
+  limit = 20,
+  search?: string,
+  facultyId?: string,
+) {
   return useQuery({
     queryKey: ["admin", "programmes", page, limit, search, facultyId],
     queryFn: () => api.getAdminProgrammes(page, limit, search, facultyId),
@@ -52,43 +57,77 @@ export function useAdminProgrammes(page = 1, limit = 20, search?: string, facult
 
 export function useCreateProgramme() {
   const qc = useQueryClient();
+
   return useMutation({
     mutationFn: (input: any) => api.createAdminProgramme(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "programmes"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "programmes"] });
+    },
   });
 }
 
 export function useUpdateProgramme() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: any }) => api.updateAdminProgramme(id, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "programmes"] }),
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: any;
+    }) => api.updateAdminProgramme(id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "programmes"] });
+    },
   });
 }
 
 export function useDeleteProgramme() {
   const qc = useQueryClient();
+
   return useMutation({
     mutationFn: (id: string) => api.deleteAdminProgramme(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "programmes"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "programmes"] });
+    },
   });
 }
 
 export function useCatalogueReview(page = 1, limit = 20) {
-  return useQuery({ queryKey: ["admin", "catalogue-review", page, limit], queryFn: () => api.getCatalogueReview(page, limit) });
+  return useQuery({
+    queryKey: ["admin", "catalogue-review", page, limit],
+    queryFn: () => api.getCatalogueReview(page, limit),
+  });
 }
 
 export function useResolveCatalogueReview() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: any }) => api.resolveCatalogueReview(id, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "catalogue-review"] }),
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: any;
+    }) => api.resolveCatalogueReview(id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "catalogue-review"],
+      });
+    },
   });
 }
 
 // ==================== SUBJECTS ====================
 
-export function useAdminSubjects(page = 1, limit = 50, search?: string, level?: string) {
+export function useAdminSubjects(
+  page = 1,
+  limit = 50,
+  search?: string,
+  level?: string,
+) {
   return useQuery({
     queryKey: ["admin", "subjects", page, limit, search, level],
     queryFn: () => api.getAdminSubjects(page, limit, search, level),
@@ -102,12 +141,202 @@ export function useAdminUniversities() {
     queryFn: () => api.getAdminUniversities(),
   });
 }
+
 export function useAdminAcademicUnitTypes() {
   return useQuery({
     queryKey: ["admin", "academic-unit-types"],
     queryFn: () => api.getAdminAcademicUnitTypes(),
   });
 }
+
+export function useUniversityAdmissionRules(universityId?: string) {
+  return useQuery({
+    queryKey: ["admin", "university-admission-rules", universityId],
+    queryFn: () =>
+      universityId
+        ? api.getUniversityAdmissionRules(universityId)
+        : Promise.resolve({ success: true, data: [] }),
+    enabled: Boolean(universityId),
+  });
+}
+
+export function useCreateUniversityAdmissionRule() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ universityId, input }: { universityId: string; input: any }) =>
+      api.createUniversityAdmissionRule(universityId, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "university-admission-rules"] });
+    },
+  });
+}
+
+export function useUpdateUniversityAdmissionRule() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ universityId, id, input }: { universityId: string; id: string; input: any }) =>
+      api.updateUniversityAdmissionRule(universityId, id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "university-admission-rules"] });
+    },
+  });
+}
+
+export function useDeleteUniversityAdmissionRule() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ universityId, id }: { universityId: string; id: string }) =>
+      api.deleteUniversityAdmissionRule(universityId, id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "university-admission-rules"] });
+    },
+  });
+}
+
+export function useAcademicUnitAdmissionRules(academicUnitId?: string) {
+  return useQuery({
+    queryKey: ["admin", "academic-unit-admission-rules", academicUnitId],
+    queryFn: () =>
+      academicUnitId
+        ? api.getAcademicUnitAdmissionRules(academicUnitId)
+        : Promise.resolve({ success: true, data: [] }),
+    enabled: Boolean(academicUnitId),
+  });
+}
+
+export function useCreateAcademicUnitAdmissionRule() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ academicUnitId, input }: { academicUnitId: string; input: any }) =>
+      api.createAcademicUnitAdmissionRule(academicUnitId, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "academic-unit-admission-rules"] });
+    },
+  });
+}
+
+export function useUpdateAcademicUnitAdmissionRule() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ academicUnitId, id, input }: { academicUnitId: string; id: string; input: any }) =>
+      api.updateAcademicUnitAdmissionRule(academicUnitId, id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "academic-unit-admission-rules"] });
+    },
+  });
+}
+
+export function useDeleteAcademicUnitAdmissionRule() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ academicUnitId, id }: { academicUnitId: string; id: string }) =>
+      api.deleteAcademicUnitAdmissionRule(academicUnitId, id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "academic-unit-admission-rules"] });
+    },
+  });
+}
+
+export function useDepartmentAdmissionRules(departmentId?: string) {
+  return useQuery({
+    queryKey: ["admin", "department-admission-rules", departmentId],
+    queryFn: () =>
+      departmentId
+        ? api.getDepartmentAdmissionRules(departmentId)
+        : Promise.resolve({ success: true, data: [] }),
+    enabled: Boolean(departmentId),
+  });
+}
+
+export function useCreateDepartmentAdmissionRule() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ departmentId, input }: { departmentId: string; input: any }) =>
+      api.createDepartmentAdmissionRule(departmentId, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "department-admission-rules"] });
+    },
+  });
+}
+
+export function useUpdateDepartmentAdmissionRule() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ departmentId, id, input }: { departmentId: string; id: string; input: any }) =>
+      api.updateDepartmentAdmissionRule(departmentId, id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "department-admission-rules"] });
+    },
+  });
+}
+
+export function useDeleteDepartmentAdmissionRule() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ departmentId, id }: { departmentId: string; id: string }) =>
+      api.deleteDepartmentAdmissionRule(departmentId, id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "department-admission-rules"] });
+    },
+  });
+}
+
+export function useProgrammeAdmissionRules(programmeId?: string) {
+  return useQuery({
+    queryKey: ["admin", "programme-admission-rules", programmeId],
+    queryFn: () =>
+      programmeId
+        ? api.getProgrammeAdmissionRules(programmeId)
+        : Promise.resolve({ success: true, data: [] }),
+    enabled: Boolean(programmeId),
+  });
+}
+
+export function useCreateProgrammeAdmissionRule() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ programmeId, input }: { programmeId: string; input: any }) =>
+      api.createProgrammeAdmissionRule(programmeId, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "programme-admission-rules"] });
+    },
+  });
+}
+
+export function useUpdateProgrammeAdmissionRule() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ programmeId, id, input }: { programmeId: string; id: string; input: any }) =>
+      api.updateProgrammeAdmissionRule(programmeId, id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "programme-admission-rules"] });
+    },
+  });
+}
+
+export function useDeleteProgrammeAdmissionRule() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ programmeId, id }: { programmeId: string; id: string }) =>
+      api.deleteProgrammeAdmissionRule(programmeId, id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "programme-admission-rules"] });
+    },
+  });
+}
+
 export function useCreateAdminUniversity() {
   const qc = useQueryClient();
 
@@ -119,7 +348,9 @@ export function useCreateAdminUniversity() {
       website?: string;
     }) => api.createAdminUniversity(input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin", "universities"] });
+      qc.invalidateQueries({
+        queryKey: ["admin", "universities"],
+      });
     },
   });
 }
@@ -141,7 +372,9 @@ export function useUpdateAdminUniversity() {
       };
     }) => api.updateAdminUniversity(id, input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin", "universities"] });
+      qc.invalidateQueries({
+        queryKey: ["admin", "universities"],
+      });
     },
   });
 }
@@ -152,7 +385,9 @@ export function useDeleteAdminUniversity() {
   return useMutation({
     mutationFn: (id: string) => api.deleteAdminUniversity(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin", "universities"] });
+      qc.invalidateQueries({
+        queryKey: ["admin", "universities"],
+      });
     },
   });
 }
@@ -176,7 +411,6 @@ export function useCreateAdminAcademicUnit() {
       type?: string;
       universityId: string;
     }) => api.createAdminFaculty(input),
-
     onSuccess: () => {
       qc.invalidateQueries({
         queryKey: ["admin", "faculties"],
@@ -201,7 +435,6 @@ export function useUpdateAdminAcademicUnit() {
         type?: string;
       };
     }) => api.updateAdminFaculty(id, input),
-
     onSuccess: () => {
       qc.invalidateQueries({
         queryKey: ["admin", "faculties"],
@@ -215,7 +448,6 @@ export function useDeleteAdminAcademicUnit() {
 
   return useMutation({
     mutationFn: (id: string) => api.deleteAdminFaculty(id),
-
     onSuccess: () => {
       qc.invalidateQueries({
         queryKey: ["admin", "faculties"],
@@ -223,6 +455,7 @@ export function useDeleteAdminAcademicUnit() {
     },
   });
 }
+
 export function useAdminDepartments(params?: {
   universityId?: string;
   academicUnitId?: string;
@@ -268,7 +501,6 @@ export function useCreateAdminDepartment() {
       description?: string;
       academicUnitId: string;
     }) => api.createAdminDepartment(input),
-
     onSuccess: () => {
       qc.invalidateQueries({
         queryKey: ["admin", "departments"],
@@ -293,7 +525,6 @@ export function useUpdateAdminDepartment() {
         academicUnitId?: string;
       };
     }) => api.updateAdminDepartment(id, input),
-
     onSuccess: () => {
       qc.invalidateQueries({
         queryKey: ["admin", "departments"],
@@ -307,7 +538,6 @@ export function useDeleteAdminDepartment() {
 
   return useMutation({
     mutationFn: (id: string) => api.deleteAdminDepartment(id),
-
     onSuccess: () => {
       qc.invalidateQueries({
         queryKey: ["admin", "departments"],
@@ -318,25 +548,50 @@ export function useDeleteAdminDepartment() {
 
 export function useCreateSubject() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: (input: { name: string; code?: string; level: string }) => api.createAdminSubject(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "subjects"] }),
+    mutationFn: (input: {
+      name: string;
+      code?: string;
+      level: string;
+    }) => api.createAdminSubject(input),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "subjects"],
+      });
+    },
   });
 }
 
 export function useUpdateSubject() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: any }) => api.updateAdminSubject(id, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "subjects"] }),
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: any;
+    }) => api.updateAdminSubject(id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "subjects"],
+      });
+    },
   });
 }
 
 export function useDeleteSubject() {
   const qc = useQueryClient();
+
   return useMutation({
     mutationFn: (id: string) => api.deleteAdminSubject(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "subjects"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "subjects"],
+      });
+    },
   });
 }
 
@@ -352,23 +607,43 @@ export function useAdminUsers(page = 1, limit = 20, search?: string) {
 
 export function useUpdateUserRole() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: ({ id, role }: { id: string; role: string }) => api.updateUserRole(id, role),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "users"] }),
+    mutationFn: ({
+      id,
+      role,
+    }: {
+      id: string;
+      role: string;
+    }) => api.updateUserRole(id, role),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "users"],
+      });
+    },
   });
 }
 
 export function useToggleUserActive() {
   const qc = useQueryClient();
+
   return useMutation({
     mutationFn: (id: string) => api.toggleUserActive(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "users"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "users"],
+      });
+    },
   });
 }
 
 // ==================== TUITION ====================
 
-export function useAdminTuition(page = 1, limit = 50, programmeId?: string) {
+export function useAdminTuition(
+  page = 1,
+  limit = 50,
+  programmeId?: string,
+) {
   return useQuery({
     queryKey: ["admin", "tuition", page, limit, programmeId],
     queryFn: () => api.getAdminTuition(page, limit, programmeId),
@@ -378,32 +653,61 @@ export function useAdminTuition(page = 1, limit = 50, programmeId?: string) {
 
 export function useCreateTuition() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: (input: { programmeId: string; academicYear: string; amount: number; currency?: string }) =>
-      api.createAdminTuition(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "tuition"] }),
+    mutationFn: (input: {
+      programmeId: string;
+      academicYear: string;
+      amount: number;
+      currency?: string;
+    }) => api.createAdminTuition(input),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "tuition"],
+      });
+    },
   });
 }
 
 export function useUpdateTuition() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: any }) => api.updateAdminTuition(id, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "tuition"] }),
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: any;
+    }) => api.updateAdminTuition(id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "tuition"],
+      });
+    },
   });
 }
 
 export function useDeleteTuition() {
   const qc = useQueryClient();
+
   return useMutation({
     mutationFn: (id: string) => api.deleteAdminTuition(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "tuition"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "tuition"],
+      });
+    },
   });
 }
 
 // ==================== CAREERS ====================
 
-export function useAdminCareers(page = 1, limit = 50, search?: string) {
+export function useAdminCareers(
+  page = 1,
+  limit = 50,
+  search?: string,
+) {
   return useQuery({
     queryKey: ["admin", "careers", page, limit, search],
     queryFn: () => api.getAdminCareers(page, limit, search),
@@ -413,31 +717,59 @@ export function useAdminCareers(page = 1, limit = 50, search?: string) {
 
 export function useCreateCareer() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: (input: { name: string; description?: string }) => api.createAdminCareer(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "careers"] }),
+    mutationFn: (input: {
+      name: string;
+      description?: string;
+    }) => api.createAdminCareer(input),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "careers"],
+      });
+    },
   });
 }
 
 export function useUpdateCareer() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: any }) => api.updateAdminCareer(id, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "careers"] }),
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: any;
+    }) => api.updateAdminCareer(id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "careers"],
+      });
+    },
   });
 }
 
 export function useDeleteCareer() {
   const qc = useQueryClient();
+
   return useMutation({
     mutationFn: (id: string) => api.deleteAdminCareer(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "careers"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "careers"],
+      });
+    },
   });
 }
 
 // ==================== KEYWORDS ====================
 
-export function useAdminKeywords(page = 1, limit = 50, search?: string) {
+export function useAdminKeywords(
+  page = 1,
+  limit = 50,
+  search?: string,
+) {
   return useQuery({
     queryKey: ["admin", "keywords", page, limit, search],
     queryFn: () => api.getAdminKeywords(page, limit, search),
@@ -447,25 +779,95 @@ export function useAdminKeywords(page = 1, limit = 50, search?: string) {
 
 export function useCreateKeyword() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: (input: { word: string }) => api.createAdminKeyword(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "keywords"] }),
+    mutationFn: (input: { word: string }) =>
+      api.createAdminKeyword(input),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "keywords"],
+      });
+    },
   });
 }
 
 export function useUpdateKeyword() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: any }) => api.updateAdminKeyword(id, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "keywords"] }),
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: any;
+    }) => api.updateAdminKeyword(id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "keywords"],
+      });
+    },
   });
 }
 
 export function useDeleteKeyword() {
   const qc = useQueryClient();
+
   return useMutation({
     mutationFn: (id: string) => api.deleteAdminKeyword(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "keywords"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "keywords"],
+      });
+    },
+  });
+}
+
+export function useAddProgrammeKeyword() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      programmeId,
+      keywordId,
+    }: {
+      programmeId: string;
+      keywordId: string;
+    }) => api.addProgrammeKeyword(programmeId, keywordId),
+
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "programmes"],
+      });
+
+      qc.invalidateQueries({
+        queryKey: ["admin", "programme-keywords", variables.programmeId],
+      });
+    },
+  });
+}
+
+export function useRemoveProgrammeKeyword() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      programmeId,
+      keywordId,
+    }: {
+      programmeId: string;
+      keywordId: string;
+    }) => api.removeProgrammeKeyword(programmeId, keywordId),
+
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "programmes"],
+      });
+
+      qc.invalidateQueries({
+        queryKey: ["admin", "programme-keywords", variables.programmeId],
+      });
+    },
   });
 }
 
@@ -481,26 +883,51 @@ export function useAdminAdmissionRules(page = 1, limit = 50) {
 
 export function useCreateAdmissionRule() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: (input: { title: string; description: string; isActive?: boolean }) =>
-      api.createAdminAdmissionRule(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "admission-rules"] }),
+    mutationFn: (input: {
+      title: string;
+      description: string;
+      isActive?: boolean;
+    }) => api.createAdminAdmissionRule(input),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "admission-rules"],
+      });
+    },
   });
 }
 
 export function useUpdateAdmissionRule() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: any }) => api.updateAdminAdmissionRule(id, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "admission-rules"] }),
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: any;
+    }) => api.updateAdminAdmissionRule(id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "admission-rules"],
+      });
+    },
   });
 }
 
 export function useDeleteAdmissionRule() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: (id: string) => api.deleteAdminAdmissionRule(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "admission-rules"] }),
+    mutationFn: (id: string) =>
+      api.deleteAdminAdmissionRule(id),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "admission-rules"],
+      });
+    },
   });
 }
 
@@ -515,25 +942,45 @@ export function useAdminAnnouncements(published?: boolean) {
 
 export function useCreateAnnouncement() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: (input: { title: string; content: string }) => api.createAdminAnnouncement(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "announcements"] }),
+    mutationFn: (input: {
+      title: string;
+      content: string;
+    }) => api.createAdminAnnouncement(input),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "announcements"],
+      });
+    },
   });
 }
 
 export function useToggleAnnouncement() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: (id: string) => api.toggleAdminAnnouncement(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "announcements"] }),
+    mutationFn: (id: string) =>
+      api.toggleAdminAnnouncement(id),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "announcements"],
+      });
+    },
   });
 }
 
 export function useDeleteAnnouncement() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: (id: string) => api.deleteAdminAnnouncement(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "announcements"] }),
+    mutationFn: (id: string) =>
+      api.deleteAdminAnnouncement(id),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "announcements"],
+      });
+    },
   });
 }
 
@@ -562,37 +1009,81 @@ export function useDuplicateSubjects() {
 
 // ==================== PROGRAMME REQUIREMENTS ====================
 
-export function useProgrammeRequirements(programmeId: string | null) {
+export function useProgrammeRequirements(
+  programmeId: string | null,
+) {
   return useQuery({
     queryKey: ["admin", "requirements", programmeId],
-    queryFn: () => api.getProgrammeRequirements(programmeId!),
+    queryFn: () =>
+      api.getProgrammeRequirements(programmeId!),
     enabled: !!programmeId,
   });
 }
 
 export function useCreateProgrammeRequirement() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: ({ programmeId, input }: { programmeId: string; input: { subjectId: string; requirementType?: string; minimumGrade?: string } }) =>
-      api.createProgrammeRequirement(programmeId, input),
-    onSuccess: (_, variables) => qc.invalidateQueries({ queryKey: ["admin", "requirements", variables.programmeId] }),
+    mutationFn: ({
+      programmeId,
+      input,
+    }: {
+      programmeId: string;
+      input: {
+        subjectId: string;
+        requirementType?: string;
+        minimumGrade?: string;
+      };
+    }) =>
+      api.createProgrammeRequirement(
+        programmeId,
+        input,
+      ),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({
+        queryKey: [
+          "admin",
+          "requirements",
+          variables.programmeId,
+        ],
+      });
+    },
   });
 }
 
 export function useUpdateProgrammeRequirement() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: { requirementType?: string; minimumGrade?: string } }) =>
-      api.updateRequirement(id, input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "requirements"] }),
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: {
+        requirementType?: string;
+        minimumGrade?: string;
+      };
+    }) => api.updateRequirement(id, input),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "requirements"],
+      });
+    },
   });
 }
 
 export function useDeleteProgrammeRequirement() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: (id: string) => api.deleteRequirement(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "requirements"] }),
+    mutationFn: (id: string) =>
+      api.deleteRequirement(id),
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["admin", "requirements"],
+      });
+    },
   });
 }
 
@@ -600,20 +1091,36 @@ export function useDeleteProgrammeRequirement() {
 
 export function useImportValidate() {
   return useMutation({
-    mutationFn: ({ type, data }: { type: string; data: any[] }) => api.importValidate(type, data),
+    mutationFn: ({
+      type,
+      data,
+    }: {
+      type: string;
+      data: any[];
+    }) => api.importValidate(type, data),
   });
 }
 
 export function useImportPreview() {
   return useMutation({
-    mutationFn: ({ type, data }: { type: string; data: any[] }) => api.importPreview(type, data),
+    mutationFn: ({
+      type,
+      data,
+    }: {
+      type: string;
+      data: any[];
+    }) => api.importPreview(type, data),
   });
 }
 
 export function useImportConfirm() {
   return useMutation({
-    mutationFn: ({ type, data }: { type: string; data: any[] }) => api.importConfirm(type, data),
+    mutationFn: ({
+      type,
+      data,
+    }: {
+      type: string;
+      data: any[];
+    }) => api.importConfirm(type, data),
   });
 }
-
-

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect, useMemo } from "react";
+import { Suspense, useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -27,6 +27,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useSearchProgrammes } from "@/app/lib/hooks/useProgrammes";
 import { useFaculties } from "@/app/lib/hooks/useFaculties";
 import { useUniversity } from "@/app/lib/context/UniversityContext";
+import { api } from "@/app/lib/api";
 
 const degreeOptions = [
   { value: "BSC", label: "BSc" },
@@ -96,21 +97,37 @@ function ProgrammesContent() {
   const { selectedUniversity } = useUniversity();
   const { data: facultiesData } = useFaculties();
 
+  const lastRecordedSearch = useRef<string | null>(null);
+
+  const searchParamsForApi = useMemo(
+    () => ({
+      query: debouncedQuery || undefined,
+      universityId: selectedUniversity?.id || undefined,
+      degreeType: filters.degree || undefined,
+      level: filters.level || undefined,
+      facultyId: filters.faculty || undefined,
+      minFee: filters.minFee ? Number(filters.minFee) : undefined,
+      maxFee: filters.maxFee ? Number(filters.maxFee) : undefined,
+      page,
+      limit: 12,
+    }),
+    [
+      debouncedQuery,
+      selectedUniversity?.id,
+      filters.degree,
+      filters.level,
+      filters.faculty,
+      filters.minFee,
+      filters.maxFee,
+      page,
+    ],
+  );
+
   const {
     data: programmesData,
     isLoading,
     isError,
-  } = useSearchProgrammes({
-    query: debouncedQuery || undefined,
-    universityId: selectedUniversity?.id || undefined,
-    degreeType: filters.degree || undefined,
-    level: filters.level || undefined,
-    facultyId: filters.faculty || undefined,
-    minFee: filters.minFee ? Number(filters.minFee) : undefined,
-    maxFee: filters.maxFee ? Number(filters.maxFee) : undefined,
-    page,
-    limit: 12,
-  });
+  } = useSearchProgrammes(searchParamsForApi);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -120,6 +137,55 @@ function ProgrammesContent() {
 
     return () => clearTimeout(timer);
   }, [query]);
+
+  useEffect(() => {
+    const historyFilters = {
+      universityId: selectedUniversity?.id || "",
+      degreeType: filters.degree || "",
+      level: filters.level || "",
+      facultyId: filters.faculty || "",
+      minFee: filters.minFee || "",
+      maxFee: filters.maxFee || "",
+    };
+
+    const hasSearchCriteria =
+      debouncedQuery.trim().length > 0 ||
+      Object.values(historyFilters).some(
+        (value) => value !== "",
+      );
+
+    if (!hasSearchCriteria) {
+      return;
+    }
+
+    const historyKey = JSON.stringify({
+      query: debouncedQuery.trim(),
+      filters: historyFilters,
+    });
+
+    if (lastRecordedSearch.current === historyKey) {
+      return;
+    }
+
+    lastRecordedSearch.current = historyKey;
+
+    void api
+      .recordSearchHistory({
+        query: debouncedQuery.trim() || undefined,
+        filters: historyFilters,
+      })
+      .catch(() => {
+        lastRecordedSearch.current = null;
+      });
+  }, [
+    debouncedQuery,
+    selectedUniversity?.id,
+    filters.degree,
+    filters.level,
+    filters.faculty,
+    filters.minFee,
+    filters.maxFee,
+  ]);
 
   const programmes = useMemo(() => {
     if (!programmesData?.data) {
@@ -182,6 +248,7 @@ function ProgrammesContent() {
     setQuery("");
     setDebouncedQuery("");
     setPage(1);
+    lastRecordedSearch.current = null;
   };
 
   const handleApplyFilters = () => {

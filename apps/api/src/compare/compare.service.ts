@@ -6,14 +6,16 @@ export class CompareService {
   constructor(private readonly prisma: PrismaService) {}
 
   async compare(programmeIds: string[]) {
-    if (!programmeIds || programmeIds.length < 2) {
+    const uniqueProgrammeIds = [...new Set((programmeIds || []).filter(Boolean))];
+
+    if (uniqueProgrammeIds.length < 2) {
       throw new NotFoundException(
         'At least 2 programme IDs are required for comparison',
       );
     }
 
     const programmes = await this.prisma.programme.findMany({
-      where: { id: { in: programmeIds } },
+      where: { id: { in: uniqueProgrammeIds } },
       include: {
         degree: {
           select: {
@@ -47,9 +49,9 @@ export class CompareService {
       },
     });
 
-    if (programmes.length !== programmeIds.length) {
+    if (programmes.length !== uniqueProgrammeIds.length) {
       const foundIds = programmes.map((p) => p.id);
-      const missing = programmeIds.filter((id) => !foundIds.includes(id));
+      const missing = uniqueProgrammeIds.filter((id) => !foundIds.includes(id));
 
       throw new NotFoundException(
         `Programmes not found: ${missing.join(', ')}`,

@@ -124,9 +124,12 @@ try {
       const isClosed = /not available|closed/i.test(status) || Boolean(parsedDeadline && parsedDeadline < new Date());
       const hasPublishedStatus = Boolean(status && !/^[-—–]+$/.test(status.trim()));
       const feeInfo = fee(entryRequirements);
+      const hasRequirements = Boolean(entryRequirements && entryRequirements.trim()) || Boolean(awardType && /requirements|entry/i.test(awardType));
       const reviewNotes = [
         !parsedDeadline && 'Missing or unreadable application deadline',
         !feeInfo && 'Fee not identified in the source requirements',
+        !hasRequirements && 'Missing admission requirements',
+        !entryRequirements && 'Missing detailed entry requirements',
         /[^A-Za-z0-9/_-]/.test(sourceCode) && 'Source code contains non-standard characters',
       ].filter(Boolean).join('; ') || null;
       const data = {

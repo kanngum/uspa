@@ -7,14 +7,16 @@ datasource db {
 }
 
 model University {
-  id            String         @id @default(cuid())
-  name          String
-  abbreviation  String         @unique
-  website       String?
-  description   String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  academicUnits AcademicUnit[]
+  id           String   @id @default(cuid())
+  name         String
+  abbreviation String   @unique
+  website      String?
+  description  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  academicUnits  AcademicUnit[]
+  admissionRules UniversityAdmissionRule[]
 }
 
 model AcademicUnit {
@@ -27,21 +29,22 @@ model AcademicUnit {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  university  University       @relation(fields: [universityId], references: [id], onDelete: Cascade)
-  type        AcademicUnitType @relation(fields: [typeId], references: [id])
-  departments Department[]
+  university     University                  @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  type           AcademicUnitType            @relation(fields: [typeId], references: [id])
+  departments    Department[]
+  admissionRules AcademicUnitAdmissionRule[]
 
   @@unique([universityId, name])
 }
 
 model AcademicUnitType {
-  id            String         @id @default(cuid())
-  name          String         @unique
-  code          String         @unique
-  description   String?
-  isActive      Boolean        @default(true)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id          String   @id @default(cuid())
+  name        String   @unique
+  code        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   academicUnits AcademicUnit[]
 }
@@ -55,8 +58,9 @@ model Department {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  academicUnit AcademicUnit @relation(fields: [academicUnitId], references: [id], onDelete: Cascade)
-  programmes   Programme[]
+  academicUnit   AcademicUnit              @relation(fields: [academicUnitId], references: [id], onDelete: Cascade)
+  programmes     Programme[]
+  admissionRules DepartmentAdmissionRule[]
 
   @@unique([academicUnitId, name])
 }
@@ -100,13 +104,13 @@ model Programme {
 }
 
 model DegreeType {
-  id          String      @id @default(cuid())
-  name        String      @unique
-  code        String      @unique
+  id          String   @id @default(cuid())
+  name        String   @unique
+  code        String   @unique
   description String?
-  isActive    Boolean     @default(true)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   programmes Programme[]
 }
@@ -139,6 +143,63 @@ model ProgrammeAdmissionRule {
   @@unique([programmeId, category, text])
 }
 
+model UniversityAdmissionRule {
+  id           String                @id @default(cuid())
+  universityId String
+  category     AdmissionRuleCategory
+  title        String
+  description  String
+  subjectId    String?
+  minimumGrade String?
+  minimumCount Int?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  university University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  subject    Subject?   @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+
+  @@index([universityId])
+  @@index([subjectId])
+}
+
+model AcademicUnitAdmissionRule {
+  id             String                @id @default(cuid())
+  academicUnitId String
+  category       AdmissionRuleCategory
+  title          String
+  description    String
+  subjectId      String?
+  minimumGrade   String?
+  minimumCount   Int?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  academicUnit AcademicUnit @relation(fields: [academicUnitId], references: [id], onDelete: Cascade)
+  subject      Subject?     @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+
+  @@index([academicUnitId])
+  @@index([subjectId])
+}
+
+model DepartmentAdmissionRule {
+  id           String                @id @default(cuid())
+  departmentId String
+  category     AdmissionRuleCategory
+  title        String
+  description  String
+  subjectId    String?
+  minimumGrade String?
+  minimumCount Int?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  subject    Subject?   @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+
+  @@index([departmentId])
+  @@index([subjectId])
+}
+
 model Subject {
   id        String       @id @default(cuid())
   name      String       @unique
@@ -148,6 +209,10 @@ model Subject {
   updatedAt DateTime     @updatedAt
 
   requirements ProgrammeRequirement[]
+
+  universityAdmissionRules   UniversityAdmissionRule[]
+  academicUnitAdmissionRules AcademicUnitAdmissionRule[]
+  departmentAdmissionRules   DepartmentAdmissionRule[]
 }
 
 model ProgrammeRequirement {

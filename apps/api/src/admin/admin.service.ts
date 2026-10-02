@@ -163,6 +163,16 @@ export class AdminService {
           },
           take: 1,
         },
+        careers: {
+          include: {
+            career: true,
+          },
+        },
+        keywords: {
+          include: {
+            keyword: true,
+          },
+        },
         _count: {
           select: {
             requirements: true,
@@ -202,6 +212,15 @@ export class AdminService {
     isActive?: boolean;
     isFeatured?: boolean;
     featuredOrder?: number | null;
+    sourceCode?: string;
+    applicationDeadline?: string;
+    applicationStatus?: string;
+    entryRequirements?: string;
+    feeAmount?: number;
+    feePeriod?: string;
+    academicYear?: string;
+    careerNames?: string | string[];
+    keywordNames?: string | string[];
   },
 ) {
   const existing = await this.prisma.programme.findUnique({
@@ -271,17 +290,23 @@ export class AdminService {
     ...(input.isActive !== undefined && {
       isActive: input.isActive,
     }),
-
-    ...(input.isFeatured !== undefined && {
-      isFeatured: input.isFeatured,
-    }),
-
-    ...(input.featuredOrder !== undefined && {
-      featuredOrder: input.isFeatured
-        ? input.featuredOrder ?? 1
-        : null,
-    }),
   };
+
+  if (input.isFeatured !== undefined) {
+    data.isFeatured = input.isFeatured;
+    data.featuredOrder = input.isFeatured
+      ? input.featuredOrder ?? existing.featuredOrder ?? 1
+      : null;
+  } else if (input.featuredOrder !== undefined) {
+    data.featuredOrder = existing.isFeatured
+      ? input.featuredOrder ?? existing.featuredOrder ?? 1
+      : null;
+  }
+
+  if (input.isFeatured === undefined && input.featuredOrder === undefined) {
+    data.isFeatured = existing.isFeatured;
+    data.featuredOrder = existing.featuredOrder;
+  }
 
   if (input.degree !== undefined) {
     const degree = await this.prisma.degreeType.findUnique({
@@ -312,6 +337,116 @@ export class AdminService {
     }
 
     data.duration = duration;
+  }
+
+  if (input.sourceCode !== undefined) {
+    data.sourceCode = input.sourceCode.trim() || null;
+  }
+
+  if (input.applicationDeadline !== undefined) {
+    data.applicationDeadline = input.applicationDeadline?.trim() || null;
+  }
+
+  if (input.applicationStatus !== undefined) {
+    data.applicationStatus = input.applicationStatus?.trim() || null;
+  }
+
+  if (input.entryRequirements !== undefined) {
+    data.entryRequirements = input.entryRequirements?.trim() || null;
+  }
+
+  if (input.feeAmount !== undefined) {
+    data.feeAmount = input.feeAmount ?? null;
+  }
+
+  if (input.feePeriod !== undefined) {
+    data.feePeriod = input.feePeriod?.trim() || null;
+  }
+
+  if (input.academicYear !== undefined) {
+    data.academicYear = input.academicYear?.trim() || null;
+  }
+
+  if (input.careerNames !== undefined) {
+    const careerNames = Array.isArray(input.careerNames)
+      ? input.careerNames
+      : String(input.careerNames)
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean);
+
+    await this.prisma.programmeCareer.deleteMany({
+      where: { programmeId: id },
+    });
+
+    if (careerNames.length > 0) {
+      const careers = await Promise.all(
+        careerNames.map(async (name) => {
+          const normalized = name.trim();
+          if (!normalized) return null;
+
+          const career = await this.prisma.career.upsert({
+            where: { name: normalized },
+            update: {},
+            create: { name: normalized },
+          });
+
+          return { programmeId: id, careerId: career.id };
+        }),
+      );
+
+      const validCareers = careers.filter(Boolean) as {
+        programmeId: string;
+        careerId: string;
+      }[];
+
+      if (validCareers.length > 0) {
+        await this.prisma.programmeCareer.createMany({
+          data: validCareers,
+        });
+      }
+    }
+  }
+
+  if (input.keywordNames !== undefined) {
+    const keywordNames = Array.isArray(input.keywordNames)
+      ? input.keywordNames
+      : String(input.keywordNames)
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean);
+
+    await this.prisma.programmeKeyword.deleteMany({
+      where: { programmeId: id },
+    });
+
+    if (keywordNames.length > 0) {
+      const keywordRecords = await Promise.all(
+        keywordNames.map(async (name) => {
+          const normalized = name.trim();
+          if (!normalized) return null;
+
+          const keyword = await this.prisma.keyword.upsert({
+            where: { word: normalized },
+            update: {},
+            create: { word: normalized },
+          });
+
+          return { programmeId: id, keywordId: keyword.id };
+        }),
+      );
+
+      const validKeywords = keywordRecords.filter(Boolean) as {
+        programmeId: string;
+        keywordId: string;
+      }[];
+
+      if (validKeywords.length > 0) {
+        await this.prisma.programmeKeyword.createMany({
+          data: validKeywords,
+        });
+      }
+    }
   }
 
   const programme = await this.prisma.programme.update({
@@ -352,7 +487,16 @@ export class AdminService {
 
   async getCatalogueReview(page = 1, limit = 20) {
     const skip = (page - 1) * limit;
-    const where = { needsReview: true };
+    const where = {
+      OR: [
+        { needsReview: true },
+        { applicationDeadline: null },
+        { tuition: { none: {} } },
+        { requirements: { none: {} } },
+        { careers: { none: {} } },
+        { keywords: { none: {} } },
+      ],
+    };
 
     const [data, total] = await Promise.all([
       this.prisma.programme.findMany({
@@ -376,6 +520,15 @@ export class AdminService {
             orderBy: { academicYear: 'desc' },
             take: 1,
           },
+          requirements: {
+            take: 5,
+          },
+          careers: {
+            take: 5,
+          },
+          keywords: {
+            take: 5,
+          },
         },
       }),
       this.prisma.programme.count({ where }),
@@ -390,6 +543,21 @@ export class AdminService {
     };
   }
 
+  private parseReviewList(
+    value?: string | string[],
+  ): string[] {
+    if (!value) return [];
+
+    const raw = Array.isArray(value)
+      ? value.join(',')
+      : value;
+
+    return raw
+      .split(/[\n,;]+/)
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+
   async resolveCatalogueReview(
     id: string,
     input: {
@@ -399,12 +567,18 @@ export class AdminService {
       feeAmount?: number;
       feePeriod?: string;
       academicYear?: string;
+      entryRequirements?: string;
+      careerNames?: string | string[];
+      keywordNames?: string | string[];
     },
   ) {
     const current = await this.prisma.programme.findUnique({
       where: { id },
       include: {
         tuition: true,
+        requirements: true,
+        careers: true,
+        keywords: true,
       },
     });
 
@@ -415,6 +589,12 @@ export class AdminService {
     const deadline = input.applicationDeadline
       ? new Date(input.applicationDeadline)
       : current.applicationDeadline;
+    const careerNames = this.parseReviewList(
+      input.careerNames,
+    );
+    const keywordNames = this.parseReviewList(
+      input.keywordNames,
+    );
 
     if (
       input.applicationDeadline &&
@@ -434,10 +614,28 @@ export class AdminService {
       input.feeAmount !== undefined ||
       current.tuition.some((item) => Number(item.amount) > 0);
 
+    const hasRequirements =
+      current.requirements.length > 0 ||
+      Boolean(
+        (
+          input.entryRequirements ??
+          current.entryRequirements
+        )?.trim(),
+      );
+    const hasCareers =
+      current.careers.length > 0 ||
+      careerNames.length > 0;
+    const hasKeywords =
+      current.keywords.length > 0 ||
+      keywordNames.length > 0;
+
     const notes =
       [
         !deadline && 'Missing application deadline',
         !feeExists && 'Missing tuition fee',
+        !hasRequirements && 'Missing admission requirements',
+        !hasCareers && 'Missing career outcomes',
+        !hasKeywords && 'Missing programme keywords',
         input.sourceCode &&
           /[^A-Za-z0-9/_-]/.test(input.sourceCode) &&
           'Source code contains non-standard characters',
@@ -457,6 +655,9 @@ export class AdminService {
         applicationStatus: status,
         sourceCode:
           input.sourceCode ?? current.sourceCode,
+        entryRequirements:
+          input.entryRequirements ??
+          current.entryRequirements,
         isActive: status !== 'Closed',
         needsReview: Boolean(notes),
         reviewNotes: notes,
@@ -490,6 +691,50 @@ export class AdminService {
           feePeriod:
             (input.feePeriod as any) || 'UNKNOWN',
           currency: 'XAF',
+        },
+      });
+    }
+
+    for (const careerName of careerNames) {
+      const career = await this.prisma.career.upsert({
+        where: { name: careerName },
+        update: {},
+        create: { name: careerName },
+      });
+
+      await this.prisma.programmeCareer.upsert({
+        where: {
+          programmeId_careerId: {
+            programmeId: id,
+            careerId: career.id,
+          },
+        },
+        update: {},
+        create: {
+          programmeId: id,
+          careerId: career.id,
+        },
+      });
+    }
+
+    for (const keywordName of keywordNames) {
+      const keyword = await this.prisma.keyword.upsert({
+        where: { word: keywordName },
+        update: {},
+        create: { word: keywordName },
+      });
+
+      await this.prisma.programmeKeyword.upsert({
+        where: {
+          programmeId_keywordId: {
+            programmeId: id,
+            keywordId: keyword.id,
+          },
+        },
+        update: {},
+        create: {
+          programmeId: id,
+          keywordId: keyword.id,
         },
       });
     }
@@ -695,6 +940,15 @@ async createProgramme(input: {
   isActive?: boolean;
   isFeatured?: boolean;
   featuredOrder?: number | null;
+  sourceCode?: string;
+  applicationDeadline?: string;
+  applicationStatus?: string;
+  entryRequirements?: string;
+  feeAmount?: number;
+  feePeriod?: string;
+  academicYear?: string;
+  careerNames?: string | string[];
+  keywordNames?: string | string[];
 }) {
   const existing = await this.prisma.programme.findUnique({
     where: {
@@ -743,7 +997,15 @@ async createProgramme(input: {
     );
   }
 
-  return this.prisma.programme.create({
+  const deadline = input.applicationDeadline
+    ? new Date(input.applicationDeadline)
+    : null;
+
+  if (input.applicationDeadline && Number.isNaN(deadline?.getTime())) {
+    throw new BadRequestException("Application deadline must be a valid date.");
+  }
+
+  const programme = await this.prisma.programme.create({
     data: {
       departmentId: input.departmentId,
       code: input.code.trim(),
@@ -752,6 +1014,10 @@ async createProgramme(input: {
       level: input.level as any,
       duration,
       description: input.description?.trim() || undefined,
+      sourceCode: input.sourceCode?.trim() || undefined,
+      applicationDeadline: deadline,
+      applicationStatus: input.applicationStatus?.trim() || undefined,
+      entryRequirements: input.entryRequirements?.trim() || undefined,
       isActive: input.isActive ?? true,
       isFeatured: input.isFeatured ?? false,
       featuredOrder:
@@ -770,6 +1036,118 @@ async createProgramme(input: {
             },
           },
         },
+      },
+    },
+  });
+
+  if (input.feeAmount !== undefined) {
+    const feeAmount = Number(input.feeAmount);
+
+    if (!Number.isFinite(feeAmount) || feeAmount <= 0) {
+      throw new BadRequestException('Fee amount must be a positive number');
+    }
+
+    await this.prisma.tuition.upsert({
+      where: {
+        programmeId_academicYear: {
+          programmeId: programme.id,
+          academicYear: input.academicYear || '2026/2027',
+        },
+      },
+      update: {
+        amount: feeAmount,
+        feePeriod: (input.feePeriod as any) || 'UNKNOWN',
+        currency: 'XAF',
+      },
+      create: {
+        programmeId: programme.id,
+        academicYear: input.academicYear || '2026/2027',
+        amount: feeAmount,
+        feePeriod: (input.feePeriod as any) || 'UNKNOWN',
+        currency: 'XAF',
+      },
+    });
+  }
+
+  const careerNames = Array.isArray(input.careerNames)
+    ? input.careerNames
+    : typeof input.careerNames === 'string'
+      ? input.careerNames.split(/[\n,;]+/).map((value) => value.trim()).filter(Boolean)
+      : [];
+
+  for (const careerName of careerNames) {
+    const career = await this.prisma.career.upsert({
+      where: { name: careerName },
+      update: {},
+      create: { name: careerName },
+    });
+
+    await this.prisma.programmeCareer.upsert({
+      where: {
+        programmeId_careerId: {
+          programmeId: programme.id,
+          careerId: career.id,
+        },
+      },
+      update: {},
+      create: {
+        programmeId: programme.id,
+        careerId: career.id,
+      },
+    });
+  }
+
+  const keywordNames = Array.isArray(input.keywordNames)
+    ? input.keywordNames
+    : typeof input.keywordNames === 'string'
+      ? input.keywordNames.split(/[\n,;]+/).map((value) => value.trim()).filter(Boolean)
+      : [];
+
+  for (const keywordName of keywordNames) {
+    const keyword = await this.prisma.keyword.upsert({
+      where: { word: keywordName },
+      update: {},
+      create: { word: keywordName },
+    });
+
+    await this.prisma.programmeKeyword.upsert({
+      where: {
+        programmeId_keywordId: {
+          programmeId: programme.id,
+          keywordId: keyword.id,
+        },
+      },
+      update: {},
+      create: {
+        programmeId: programme.id,
+        keywordId: keyword.id,
+      },
+    });
+  }
+
+  return this.prisma.programme.findUnique({
+    where: { id: programme.id },
+    include: {
+      degree: true,
+      department: {
+        include: {
+          academicUnit: {
+            include: {
+              university: true,
+              type: true,
+            },
+          },
+        },
+      },
+      tuition: {
+        orderBy: { academicYear: 'desc' },
+        take: 1,
+      },
+      careers: {
+        include: { career: true },
+      },
+      keywords: {
+        include: { keyword: true },
       },
     },
   });
@@ -1043,6 +1421,419 @@ async createProgramme(input: {
         },
       },
     });
+  }
+
+  async getUniversityAdmissionRules(universityId: string) {
+    return this.prisma.universityAdmissionRule.findMany({
+      where: { universityId },
+      orderBy: { createdAt: 'desc' },
+      include: { subject: true },
+    });
+  }
+
+  async createUniversityAdmissionRule(input: {
+    universityId: string;
+    category: string;
+    title: string;
+    description: string;
+    subjectId?: string | null;
+    minimumGrade?: string | null;
+    minimumCount?: number | null;
+  }) {
+    const university = await this.prisma.university.findUnique({
+      where: { id: input.universityId },
+    });
+
+    if (!university) {
+      throw new NotFoundException('University not found');
+    }
+
+    if (input.subjectId) {
+      const subject = await this.prisma.subject.findUnique({
+        where: { id: input.subjectId },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject not found');
+      }
+    }
+
+    return this.prisma.universityAdmissionRule.create({
+      data: {
+        universityId: input.universityId,
+        category: input.category as any,
+        title: input.title.trim(),
+        description: input.description.trim(),
+        subjectId: input.subjectId || null,
+        minimumGrade: input.minimumGrade?.trim() || null,
+        minimumCount:
+          input.minimumCount !== undefined && input.minimumCount !== null
+            ? Number(input.minimumCount)
+            : null,
+      },
+      include: { subject: true },
+    });
+  }
+
+  async updateUniversityAdmissionRule(
+    id: string,
+    input: {
+      category?: string;
+      title?: string;
+      description?: string;
+      subjectId?: string | null;
+      minimumGrade?: string | null;
+      minimumCount?: number | null;
+    },
+  ) {
+    const existing = await this.prisma.universityAdmissionRule.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('University admission rule not found');
+    }
+
+    if (input.subjectId) {
+      const subject = await this.prisma.subject.findUnique({
+        where: { id: input.subjectId },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject not found');
+      }
+    }
+
+    return this.prisma.universityAdmissionRule.update({
+      where: { id },
+      data: {
+        ...(input.category !== undefined && {
+          category: input.category as any,
+        }),
+        ...(input.title !== undefined && {
+          title: input.title.trim(),
+        }),
+        ...(input.description !== undefined && {
+          description: input.description.trim(),
+        }),
+        ...(input.subjectId !== undefined && {
+          subjectId: input.subjectId || null,
+        }),
+        ...(input.minimumGrade !== undefined && {
+          minimumGrade: input.minimumGrade?.trim() || null,
+        }),
+        ...(input.minimumCount !== undefined && {
+          minimumCount:
+            input.minimumCount !== null ? Number(input.minimumCount) : null,
+        }),
+      },
+      include: { subject: true },
+    });
+  }
+
+  async deleteUniversityAdmissionRule(id: string) {
+    await this.prisma.universityAdmissionRule.delete({
+      where: { id },
+    });
+
+    return { message: 'University admission rule deleted' };
+  }
+
+  async getAcademicUnitAdmissionRules(academicUnitId: string) {
+    return this.prisma.academicUnitAdmissionRule.findMany({
+      where: { academicUnitId },
+      orderBy: { createdAt: 'desc' },
+      include: { subject: true },
+    });
+  }
+
+  async createAcademicUnitAdmissionRule(input: {
+    academicUnitId: string;
+    category: string;
+    title: string;
+    description: string;
+    subjectId?: string | null;
+    minimumGrade?: string | null;
+    minimumCount?: number | null;
+  }) {
+    const academicUnit = await this.prisma.academicUnit.findUnique({
+      where: { id: input.academicUnitId },
+    });
+
+    if (!academicUnit) {
+      throw new NotFoundException('Academic unit not found');
+    }
+
+    if (input.subjectId) {
+      const subject = await this.prisma.subject.findUnique({
+        where: { id: input.subjectId },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject not found');
+      }
+    }
+
+    return this.prisma.academicUnitAdmissionRule.create({
+      data: {
+        academicUnitId: input.academicUnitId,
+        category: input.category as any,
+        title: input.title.trim(),
+        description: input.description.trim(),
+        subjectId: input.subjectId || null,
+        minimumGrade: input.minimumGrade?.trim() || null,
+        minimumCount:
+          input.minimumCount !== undefined && input.minimumCount !== null
+            ? Number(input.minimumCount)
+            : null,
+      },
+      include: { subject: true },
+    });
+  }
+
+  async updateAcademicUnitAdmissionRule(
+    id: string,
+    input: {
+      category?: string;
+      title?: string;
+      description?: string;
+      subjectId?: string | null;
+      minimumGrade?: string | null;
+      minimumCount?: number | null;
+    },
+  ) {
+    const existing = await this.prisma.academicUnitAdmissionRule.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Academic unit admission rule not found');
+    }
+
+    if (input.subjectId) {
+      const subject = await this.prisma.subject.findUnique({
+        where: { id: input.subjectId },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject not found');
+      }
+    }
+
+    return this.prisma.academicUnitAdmissionRule.update({
+      where: { id },
+      data: {
+        ...(input.category !== undefined && {
+          category: input.category as any,
+        }),
+        ...(input.title !== undefined && {
+          title: input.title.trim(),
+        }),
+        ...(input.description !== undefined && {
+          description: input.description.trim(),
+        }),
+        ...(input.subjectId !== undefined && {
+          subjectId: input.subjectId || null,
+        }),
+        ...(input.minimumGrade !== undefined && {
+          minimumGrade: input.minimumGrade?.trim() || null,
+        }),
+        ...(input.minimumCount !== undefined && {
+          minimumCount:
+            input.minimumCount !== null ? Number(input.minimumCount) : null,
+        }),
+      },
+      include: { subject: true },
+    });
+  }
+
+  async deleteAcademicUnitAdmissionRule(id: string) {
+    await this.prisma.academicUnitAdmissionRule.delete({
+      where: { id },
+    });
+
+    return { message: 'Academic unit admission rule deleted' };
+  }
+
+  async getDepartmentAdmissionRules(departmentId: string) {
+    return this.prisma.departmentAdmissionRule.findMany({
+      where: { departmentId },
+      orderBy: { createdAt: 'desc' },
+      include: { subject: true },
+    });
+  }
+
+  async createDepartmentAdmissionRule(input: {
+    departmentId: string;
+    category: string;
+    title: string;
+    description: string;
+    subjectId?: string | null;
+    minimumGrade?: string | null;
+    minimumCount?: number | null;
+  }) {
+    const department = await this.prisma.department.findUnique({
+      where: { id: input.departmentId },
+    });
+
+    if (!department) {
+      throw new NotFoundException('Department not found');
+    }
+
+    if (input.subjectId) {
+      const subject = await this.prisma.subject.findUnique({
+        where: { id: input.subjectId },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject not found');
+      }
+    }
+
+    return this.prisma.departmentAdmissionRule.create({
+      data: {
+        departmentId: input.departmentId,
+        category: input.category as any,
+        title: input.title.trim(),
+        description: input.description.trim(),
+        subjectId: input.subjectId || null,
+        minimumGrade: input.minimumGrade?.trim() || null,
+        minimumCount:
+          input.minimumCount !== undefined && input.minimumCount !== null
+            ? Number(input.minimumCount)
+            : null,
+      },
+      include: { subject: true },
+    });
+  }
+
+  async updateDepartmentAdmissionRule(
+    id: string,
+    input: {
+      category?: string;
+      title?: string;
+      description?: string;
+      subjectId?: string | null;
+      minimumGrade?: string | null;
+      minimumCount?: number | null;
+    },
+  ) {
+    const existing = await this.prisma.departmentAdmissionRule.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Department admission rule not found');
+    }
+
+    if (input.subjectId) {
+      const subject = await this.prisma.subject.findUnique({
+        where: { id: input.subjectId },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject not found');
+      }
+    }
+
+    return this.prisma.departmentAdmissionRule.update({
+      where: { id },
+      data: {
+        ...(input.category !== undefined && {
+          category: input.category as any,
+        }),
+        ...(input.title !== undefined && {
+          title: input.title.trim(),
+        }),
+        ...(input.description !== undefined && {
+          description: input.description.trim(),
+        }),
+        ...(input.subjectId !== undefined && {
+          subjectId: input.subjectId || null,
+        }),
+        ...(input.minimumGrade !== undefined && {
+          minimumGrade: input.minimumGrade?.trim() || null,
+        }),
+        ...(input.minimumCount !== undefined && {
+          minimumCount:
+            input.minimumCount !== null ? Number(input.minimumCount) : null,
+        }),
+      },
+      include: { subject: true },
+    });
+  }
+
+  async deleteDepartmentAdmissionRule(id: string) {
+    await this.prisma.departmentAdmissionRule.delete({
+      where: { id },
+    });
+
+    return { message: 'Department admission rule deleted' };
+  }
+
+  async getProgrammeAdmissionRules(programmeId: string) {
+    return this.prisma.programmeAdmissionRule.findMany({
+      where: { programmeId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async createProgrammeAdmissionRule(input: {
+    programmeId: string;
+    category: string;
+    text: string;
+  }) {
+    const programme = await this.prisma.programme.findUnique({
+      where: { id: input.programmeId },
+    });
+
+    if (!programme) {
+      throw new NotFoundException('Programme not found');
+    }
+
+    return this.prisma.programmeAdmissionRule.create({
+      data: {
+        programmeId: input.programmeId,
+        category: input.category as any,
+        text: input.text.trim(),
+      },
+    });
+  }
+
+  async updateProgrammeAdmissionRule(
+    id: string,
+    input: {
+      category?: string;
+      text?: string;
+    },
+  ) {
+    const existing = await this.prisma.programmeAdmissionRule.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Programme admission rule not found');
+    }
+
+    return this.prisma.programmeAdmissionRule.update({
+      where: { id },
+      data: {
+        ...(input.category !== undefined && {
+          category: input.category as any,
+        }),
+        ...(input.text !== undefined && {
+          text: input.text.trim(),
+        }),
+      },
+    });
+  }
+
+  async deleteProgrammeAdmissionRule(id: string) {
+    await this.prisma.programmeAdmissionRule.delete({
+      where: { id },
+    });
+
+    return { message: 'Programme admission rule deleted' };
   }
 
   // ==================== ACADEMIC UNIT MANAGEMENT ====================

@@ -34,16 +34,96 @@ export class ProgrammesService {
     const page = Math.max(1, params.page || 1);
     const limit = Math.min(100, Math.max(1, params.limit || 20));
 
-    const where: Prisma.ProgrammeWhereInput = {};
+    const where: Prisma.ProgrammeWhereInput = {
+      isActive: true,
+    };
+    const andFilters: Prisma.ProgrammeWhereInput[] = [];
 
-    // University filter
     if (universityId) {
-      where.department = {
-        ...((where.department as any) || {}),
-        academicUnit: {
-          universityId,
+      andFilters.push({
+        department: {
+          academicUnit: {
+            universityId,
+          },
         },
-      };
+      });
+    }
+
+    if (facultyId) {
+      andFilters.push({
+        department: {
+          academicUnitId: facultyId,
+        },
+      });
+    }
+
+    if (departmentId) {
+      andFilters.push({ departmentId });
+    }
+
+    // Degree type filter
+    // degreeType can be either the stable code or the display name.
+    if (degreeType?.trim()) {
+      const degreeValue = degreeType.trim();
+
+      andFilters.push({
+        degree: {
+          OR: [
+            {
+              code: {
+                equals: degreeValue,
+                mode: 'insensitive',
+              },
+            },
+            {
+              name: {
+                equals: degreeValue,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        },
+      });
+    }
+
+    if (level) {
+      andFilters.push({
+        level: level as Prisma.EnumProgrammeLevelFilter['equals'],
+      });
+    }
+
+    if (career) {
+      andFilters.push({
+        careers: {
+          some: {
+            career: {
+              name: {
+                contains: career,
+                mode: 'insensitive',
+              },
+            },
+          },
+        },
+      });
+    }
+
+    if (minFee !== undefined || maxFee !== undefined) {
+      andFilters.push({
+        tuition: {
+          some: {
+            ...(minFee !== undefined && {
+              amount: { gte: minFee },
+            }),
+            ...(maxFee !== undefined && {
+              amount: { lte: maxFee },
+            }),
+          },
+        },
+      });
+    }
+
+    if (andFilters.length > 0) {
+      where.AND = andFilters;
     }
 
     // Text search across name, code, description and keywords
@@ -80,74 +160,6 @@ export class ProgrammesService {
           },
         },
       ];
-    }
-
-    // Faculty / Academic Unit filter
-    if (facultyId) {
-      where.department = {
-        academicUnitId: facultyId,
-      };
-    }
-
-    // Department filter
-    if (departmentId) {
-      where.departmentId = departmentId;
-    }
-
-    // Degree type filter
-    // degreeType can be either the stable code or the display name.
-    if (degreeType?.trim()) {
-      const degreeValue = degreeType.trim();
-
-      where.degree = {
-        OR: [
-          {
-            code: {
-              equals: degreeValue,
-              mode: 'insensitive',
-            },
-          },
-          {
-            name: {
-              equals: degreeValue,
-              mode: 'insensitive',
-            },
-          },
-        ],
-      };
-    }
-
-    // Level filter
-    if (level) {
-      where.level = level as Prisma.EnumProgrammeLevelFilter['equals'];
-    }
-
-    // Career filter
-    if (career) {
-      where.careers = {
-        some: {
-          career: {
-            name: {
-              contains: career,
-              mode: 'insensitive',
-            },
-          },
-        },
-      };
-    }
-
-    // Tuition / fee range filter
-    if (minFee !== undefined || maxFee !== undefined) {
-      where.tuition = {
-        some: {
-          ...(minFee !== undefined && {
-            amount: { gte: minFee },
-          }),
-          ...(maxFee !== undefined && {
-            amount: { lte: maxFee },
-          }),
-        },
-      };
     }
 
     const [data, total] = await Promise.all([
@@ -204,7 +216,7 @@ export class ProgrammesService {
 
   async findOne(id: string) {
     const programme = await this.prisma.programme.findUnique({
-      where: { id },
+      where: { id, isActive: true },
       include: {
         degree: true,
         department: {
@@ -261,7 +273,7 @@ export class ProgrammesService {
 
   async findByCode(code: string) {
     const programme = await this.prisma.programme.findUnique({
-      where: { code },
+      where: { code, isActive: true },
       include: {
         degree: true,
         department: {
@@ -306,6 +318,7 @@ export class ProgrammesService {
   async getFeatured(universityId?: string) {
     const where: Prisma.ProgrammeWhereInput = {
       isFeatured: true,
+      isActive: true,
     };
 
     if (universityId) {
@@ -577,6 +590,7 @@ export class ProgrammesService {
 
     const programmes = await this.prisma.programme.findMany({
       where: {
+        isActive: true,
         OR: [
           {
             name: {

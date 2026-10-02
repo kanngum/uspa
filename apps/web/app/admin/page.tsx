@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo, useCallback } from "react";
 import {
@@ -74,14 +74,28 @@ import {
   useAdminFaculties,
   useAdminUniversities,
   useCreateAdminUniversity,
+  useUpdateAdminUniversity,
+  useDeleteAdminUniversity,
   useAdminAcademicUnitTypes,
   useCreateAdminAcademicUnit,
   useUpdateAdminAcademicUnit,
   useDeleteAdminAcademicUnit,
-  useAdminAdmissionRules,
-  useCreateAdmissionRule,
-  useUpdateAdmissionRule,
-  useDeleteAdmissionRule,
+  useUniversityAdmissionRules,
+  useCreateUniversityAdmissionRule,
+  useUpdateUniversityAdmissionRule,
+  useDeleteUniversityAdmissionRule,
+  useAcademicUnitAdmissionRules,
+  useCreateAcademicUnitAdmissionRule,
+  useUpdateAcademicUnitAdmissionRule,
+  useDeleteAcademicUnitAdmissionRule,
+  useDepartmentAdmissionRules,
+  useCreateDepartmentAdmissionRule,
+  useUpdateDepartmentAdmissionRule,
+  useDeleteDepartmentAdmissionRule,
+  useProgrammeAdmissionRules,
+  useCreateProgrammeAdmissionRule,
+  useUpdateProgrammeAdmissionRule,
+  useDeleteProgrammeAdmissionRule,
   useDuplicateFaculties,
   useDuplicateProgrammes,
   useDuplicateSubjects,
@@ -125,7 +139,7 @@ function Modal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl dark:bg-zinc-900"
+        className="w-full max-w-xl rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-zinc-700 dark:bg-zinc-900"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
@@ -292,7 +306,9 @@ export default function AdminDashboardPage() {
           popularSearches={popularSearches}
         />
       )}
-      {activeTab === "academic-structure" && <AcademicStructureTab />}
+      {activeTab === "academic-structure" && (
+        <AcademicStructureTab showToast={showToast} />
+      )}
       {activeTab === "programmes" && (
         <ProgrammesTab
           page={page}
@@ -529,17 +545,797 @@ function DashboardTab({
     </>
   );
 }
+
+function AdmissionRulesEditorPanel({
+  title,
+  description,
+  emptyState,
+  rules,
+  isLoading,
+  subjects,
+  subjectLabel,
+  onCreate,
+  onUpdate,
+  onDelete,
+  showToast,
+}: {
+  title: string;
+  description: string;
+  emptyState: string;
+  rules: any[];
+  isLoading: boolean;
+  subjects: any[];
+  subjectLabel: string;
+  onCreate: (input: any) => Promise<void>;
+  onUpdate: (id: string, input: any) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+  showToast: (variant: "success" | "error", message: string) => void;
+}) {
+  const [modal, setModal] = useState<{ mode: ModalMode; item?: any }>({ mode: null });
+  const [form, setForm] = useState({
+    category: "O_LEVEL",
+    title: "",
+    description: "",
+    subjectId: "",
+    minimumGrade: "",
+    minimumCount: "",
+  });
+
+  const resetForm = () => {
+    setForm({
+      category: "O_LEVEL",
+      title: "",
+      description: "",
+      subjectId: "",
+      minimumGrade: "",
+      minimumCount: "",
+    });
+  };
+
+  const openCreate = () => {
+    resetForm();
+    setModal({ mode: "create" });
+  };
+
+  const openEdit = (item: any) => {
+    setForm({
+      category: item.category || "O_LEVEL",
+      title: item.title || "",
+      description: item.description || "",
+      subjectId: item.subjectId || "",
+      minimumGrade: item.minimumGrade || "",
+      minimumCount: item.minimumCount ?? "",
+    });
+    setModal({ mode: "edit", item });
+  };
+
+  const handleSubmit = async () => {
+    if (!form.title.trim() || !form.description.trim()) {
+      showToast("error", "Rule title and description are required");
+      return;
+    }
+
+    try {
+      const payload = {
+        category: form.category,
+        title: form.title.trim(),
+        description: form.description.trim(),
+        subjectId: form.subjectId || undefined,
+        minimumGrade: form.minimumGrade.trim() || undefined,
+        minimumCount:
+          form.minimumCount === "" ? undefined : Number(form.minimumCount),
+      };
+
+      if (modal.mode === "create") {
+        await onCreate(payload);
+        showToast("success", `${title.replace(" Admission Rules", "")} rule created`);
+      } else if (modal.mode === "edit" && modal.item) {
+        await onUpdate(modal.item.id, payload);
+        showToast("success", `${title.replace(" Admission Rules", "")} rule updated`);
+      }
+
+      setModal({ mode: null });
+      resetForm();
+    } catch (err: any) {
+      showToast("error", err.message || `Unable to save ${title.toLowerCase()}`);
+    }
+  };
+
+  const handleDelete = async (item: any) => {
+    if (!item?.id) return;
+
+    try {
+      await onDelete(item.id);
+      showToast("success", `${title.replace(" Admission Rules", "")} rule deleted`);
+    } catch (err: any) {
+      showToast("error", err.message || `Unable to delete ${title.toLowerCase()}`);
+    }
+  };
+
+  return (
+    <div className="mt-6 rounded-card border border-rule bg-white p-6 shadow-sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-base font-semibold text-primary">{title}</h3>
+          <p className="mt-1 text-sm text-secondary">{description}</p>
+        </div>
+
+        <button
+          type="button"
+          onClick={openCreate}
+          className="min-h-10 rounded-control bg-primary px-4 text-sm font-semibold text-white"
+        >
+          Add Rule
+        </button>
+      </div>
+
+      <div className="mt-4 space-y-3">
+        {isLoading ? (
+          <p className="text-sm text-secondary">Loading rules...</p>
+        ) : rules.length === 0 ? (
+          <div className="rounded-control border border-dashed border-rule p-5 text-sm text-secondary">
+            {emptyState}
+          </div>
+        ) : (
+          rules.map((rule: any) => (
+            <div key={rule.id} className="rounded-control border border-rule p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="font-medium text-primary">{rule.title}</p>
+                  <p className="text-xs uppercase tracking-wide text-secondary">{rule.category}</p>
+                  <p className="mt-1 text-sm text-secondary">{rule.description}</p>
+                  {(rule.subject || rule.minimumGrade || rule.minimumCount !== null) && (
+                    <p className="mt-2 text-xs text-secondary">
+                      {rule.subject ? `Subject: ${rule.subject.name}` : subjectLabel}
+                      {rule.minimumGrade ? ` • Minimum grade: ${rule.minimumGrade}` : ""}
+                      {rule.minimumCount !== null && rule.minimumCount !== undefined ? ` • Minimum count: ${rule.minimumCount}` : ""}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => openEdit(rule)}
+                    className="min-h-10 rounded-control border border-rule-strong px-3 text-sm font-semibold text-primary"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(rule)}
+                    className="min-h-10 rounded-control border border-red-200 px-3 text-sm font-semibold text-red-600"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {modal.mode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setModal({ mode: null })}>
+          <div className="w-full max-w-xl rounded-xl bg-white p-6 shadow-2xl dark:bg-zinc-900" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-primary">
+                {modal.mode === "create" ? "Add" : "Edit"} rule
+              </h3>
+              <button type="button" onClick={() => setModal({ mode: null })} className="text-secondary hover:text-primary">✕</button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-primary">Category</label>
+                <select
+                  value={form.category}
+                  onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  className="min-h-11 w-full rounded-control border border-rule bg-white px-3 text-sm text-primary"
+                >
+                  <option value="O_LEVEL">O Level</option>
+                  <option value="A_LEVEL">A Level</option>
+                  <option value="QUALIFICATION">Qualification</option>
+                  <option value="ENTRANCE_EXAM">Entrance Exam</option>
+                  <option value="EQUIVALENCY">Equivalency</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-primary">Title</label>
+                <input
+                  type="text"
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  className="min-h-11 w-full rounded-control border border-rule bg-white px-3 text-sm text-primary"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-primary">Description</label>
+                <textarea
+                  rows={3}
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className="w-full rounded-control border border-rule bg-white px-3 py-2 text-sm text-primary"
+                />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-primary">Subject</label>
+                  <select
+                    value={form.subjectId}
+                    onChange={(e) => setForm({ ...form, subjectId: e.target.value })}
+                    className="min-h-11 w-full rounded-control border border-rule bg-white px-3 text-sm text-primary"
+                  >
+                    <option value="">Any subject</option>
+                    {subjects.map((subject: any) => (
+                      <option key={subject.id} value={subject.id}>{subject.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-primary">Minimum grade</label>
+                  <input
+                    type="text"
+                    value={form.minimumGrade}
+                    onChange={(e) => setForm({ ...form, minimumGrade: e.target.value })}
+                    placeholder="e.g. B"
+                    className="min-h-11 w-full rounded-control border border-rule bg-white px-3 text-sm text-primary"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-primary">Minimum count</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.minimumCount}
+                  onChange={(e) => setForm({ ...form, minimumCount: e.target.value })}
+                  placeholder="Optional"
+                  className="min-h-11 w-full rounded-control border border-rule bg-white px-3 text-sm text-primary"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <button type="button" onClick={() => setModal({ mode: null })} className="rounded-control border border-rule px-4 py-2 text-sm font-semibold text-primary">
+                Cancel
+              </button>
+              <button type="button" onClick={handleSubmit} className="rounded-control bg-primary px-4 py-2 text-sm font-semibold text-white">
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UniversityAdmissionRulesPanel({
+  universityId,
+  showToast,
+}: {
+  universityId?: string;
+  showToast: (variant: "success" | "error", message: string) => void;
+}) {
+  const { data, isLoading } = useUniversityAdmissionRules(universityId);
+  const createMutation = useCreateUniversityAdmissionRule();
+  const updateMutation = useUpdateUniversityAdmissionRule();
+  const deleteMutation = useDeleteUniversityAdmissionRule();
+  const { data: subjectsData } = useAdminSubjects(1, 200);
+  const subjects = Array.isArray(subjectsData?.data) ? subjectsData.data : [];
+
+  if (!universityId) return null;
+
+  return (
+    <AdmissionRulesEditorPanel
+      title="University Admission Rules"
+      description="This is the university-specific policy layer used for admissions and inheritance."
+      emptyState="No university admission rules yet."
+      rules={Array.isArray(data?.data) ? data.data : []}
+      isLoading={isLoading}
+      subjects={subjects}
+      subjectLabel="Subject: any"
+      onCreate={async (input) => {
+        await createMutation.mutateAsync({ universityId, input });
+      }}
+      onUpdate={async (id, input) => {
+        await updateMutation.mutateAsync({ universityId, id, input });
+      }}
+      onDelete={async (id) => {
+        await deleteMutation.mutateAsync({ universityId, id });
+      }}
+      showToast={showToast}
+    />
+  );
+}
+
+function AcademicUnitAdmissionRulesPanel({
+  academicUnitId,
+  showToast,
+}: {
+  academicUnitId?: string;
+  showToast: (variant: "success" | "error", message: string) => void;
+}) {
+  const { data, isLoading } = useAcademicUnitAdmissionRules(academicUnitId);
+  const createMutation = useCreateAcademicUnitAdmissionRule();
+  const updateMutation = useUpdateAcademicUnitAdmissionRule();
+  const deleteMutation = useDeleteAcademicUnitAdmissionRule();
+  const { data: subjectsData } = useAdminSubjects(1, 200);
+  const subjects = Array.isArray(subjectsData?.data) ? subjectsData.data : [];
+
+  if (!academicUnitId) return null;
+
+  return (
+    <AdmissionRulesEditorPanel
+      title="Academic Unit Admission Rules"
+      description="Manage faculty or school-level admissions rules and overrides for this academic unit."
+      emptyState="No academic unit admission rules yet."
+      rules={Array.isArray(data?.data) ? data.data : []}
+      isLoading={isLoading}
+      subjects={subjects}
+      subjectLabel="Subject: any"
+      onCreate={async (input) => {
+        await createMutation.mutateAsync({ academicUnitId, input });
+      }}
+      onUpdate={async (id, input) => {
+        await updateMutation.mutateAsync({ academicUnitId, id, input });
+      }}
+      onDelete={async (id) => {
+        await deleteMutation.mutateAsync({ academicUnitId, id });
+      }}
+      showToast={showToast}
+    />
+  );
+}
+
+function DepartmentAdmissionRulesPanel({
+  departmentId,
+  showToast,
+}: {
+  departmentId?: string;
+  showToast: (variant: "success" | "error", message: string) => void;
+}) {
+  const { data, isLoading } = useDepartmentAdmissionRules(departmentId);
+  const createMutation = useCreateDepartmentAdmissionRule();
+  const updateMutation = useUpdateDepartmentAdmissionRule();
+  const deleteMutation = useDeleteDepartmentAdmissionRule();
+  const { data: subjectsData } = useAdminSubjects(1, 200);
+  const subjects = Array.isArray(subjectsData?.data) ? subjectsData.data : [];
+
+  if (!departmentId) return null;
+
+  return (
+    <AdmissionRulesEditorPanel
+      title="Department Admission Rules"
+      description="Manage department-level admissions rules and overrides, which take precedence over parent rules."
+      emptyState="No department admission rules yet."
+      rules={Array.isArray(data?.data) ? data.data : []}
+      isLoading={isLoading}
+      subjects={subjects}
+      subjectLabel="Subject: any"
+      onCreate={async (input) => {
+        await createMutation.mutateAsync({ departmentId, input });
+      }}
+      onUpdate={async (id, input) => {
+        await updateMutation.mutateAsync({ departmentId, id, input });
+      }}
+      onDelete={async (id) => {
+        await deleteMutation.mutateAsync({ departmentId, id });
+      }}
+      showToast={showToast}
+    />
+  );
+}
+
+function ProgrammeAdmissionRulesPanel({
+  programmeId,
+  showToast,
+}: {
+  programmeId?: string;
+  showToast: (variant: "success" | "error", message: string) => void;
+}) {
+  const { data, isLoading } = useProgrammeAdmissionRules(programmeId);
+  const createMutation = useCreateProgrammeAdmissionRule();
+  const updateMutation = useUpdateProgrammeAdmissionRule();
+  const deleteMutation = useDeleteProgrammeAdmissionRule();
+
+  if (!programmeId) return null;
+
+  const [modal, setModal] = useState<{ mode: ModalMode; item?: any }>({ mode: null });
+  const [form, setForm] = useState({
+    category: "O_LEVEL",
+    text: "",
+  });
+
+  const resetForm = () => {
+    setForm({
+      category: "O_LEVEL",
+      text: "",
+    });
+  };
+
+  const openCreate = () => {
+    resetForm();
+    setModal({ mode: "create" });
+  };
+
+  const openEdit = (item: any) => {
+    setForm({
+      category: item.category || "O_LEVEL",
+      text: item.text || "",
+    });
+    setModal({ mode: "edit", item });
+  };
+
+  const handleSubmit = async () => {
+    if (!form.text.trim()) {
+      showToast("error", "Rule text is required");
+      return;
+    }
+
+    try {
+      if (modal.mode === "create") {
+        await createMutation.mutateAsync({
+          programmeId,
+          input: {
+            category: form.category,
+            text: form.text.trim(),
+          },
+        });
+        showToast("success", "Programme rule created");
+      } else if (modal.mode === "edit" && modal.item) {
+        await updateMutation.mutateAsync({
+          programmeId,
+          id: modal.item.id,
+          input: {
+            category: form.category,
+            text: form.text.trim(),
+          },
+        });
+        showToast("success", "Programme rule updated");
+      }
+
+      setModal({ mode: null });
+      resetForm();
+    } catch (err: any) {
+      showToast("error", err.message || "Unable to save programme rule");
+    }
+  };
+
+  const handleDelete = async (item: any) => {
+    if (!item?.id) return;
+
+    try {
+      await deleteMutation.mutateAsync({ programmeId, id: item.id });
+      showToast("success", "Programme rule deleted");
+    } catch (err: any) {
+      showToast("error", err.message || "Unable to delete programme rule");
+    }
+  };
+
+  return (
+    <div className="mt-6 rounded-card border border-rule bg-white p-6 shadow-sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-base font-semibold text-primary">Programme Admission Rules</h3>
+          <p className="mt-1 text-sm text-secondary">Manage the final programme-specific admissions note or requirement for this programme.</p>
+        </div>
+
+        <button
+          type="button"
+          onClick={openCreate}
+          className="min-h-10 rounded-control bg-primary px-4 text-sm font-semibold text-white"
+        >
+          Add Rule
+        </button>
+      </div>
+
+      <div className="mt-4 space-y-3">
+        {isLoading ? (
+          <p className="text-sm text-secondary">Loading rules...</p>
+        ) : !Array.isArray(data?.data) || data.data.length === 0 ? (
+          <div className="rounded-control border border-dashed border-rule p-5 text-sm text-secondary">
+            No programme admission rules yet.
+          </div>
+        ) : (
+          data.data.map((rule: any) => (
+            <div key={rule.id} className="rounded-control border border-rule p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-secondary">{rule.category}</p>
+                  <p className="mt-2 text-sm text-primary">{rule.text}</p>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => openEdit(rule)}
+                    className="min-h-10 rounded-control border border-rule-strong px-3 text-sm font-semibold text-primary"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(rule)}
+                    className="min-h-10 rounded-control border border-red-200 px-3 text-sm font-semibold text-red-600"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {modal.mode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setModal({ mode: null })}>
+          <div className="w-full max-w-xl rounded-xl bg-white p-6 shadow-2xl dark:bg-zinc-900" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-primary">{modal.mode === "create" ? "Add" : "Edit"} programme rule</h3>
+              <button type="button" onClick={() => setModal({ mode: null })} className="text-secondary hover:text-primary">✕</button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-primary">Category</label>
+                <select
+                  value={form.category}
+                  onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  className="min-h-11 w-full rounded-control border border-rule bg-white px-3 text-sm text-primary"
+                >
+                  <option value="O_LEVEL">O Level</option>
+                  <option value="A_LEVEL">A Level</option>
+                  <option value="QUALIFICATION">Qualification</option>
+                  <option value="ENTRANCE_EXAM">Entrance Exam</option>
+                  <option value="EQUIVALENCY">Equivalency</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-primary">Rule text</label>
+                <textarea
+                  rows={5}
+                  value={form.text}
+                  onChange={(e) => setForm({ ...form, text: e.target.value })}
+                  className="w-full rounded-control border border-rule bg-white px-3 py-2 text-sm text-primary"
+                  placeholder="e.g. Applicants must have a minimum grade of B in Biology and submit an aptitude test result."
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <button type="button" onClick={() => setModal({ mode: null })} className="rounded-control border border-rule px-4 py-2 text-sm font-semibold text-primary">
+                Cancel
+              </button>
+              <button type="button" onClick={handleSubmit} className="rounded-control bg-primary px-4 py-2 text-sm font-semibold text-white">
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 //Academic Structure Tab
 // Academic Structure Tab
-function AcademicStructureTab() {
+function RuleDraftComposer({
+  title,
+  description,
+  draft,
+  setDraft,
+  rules,
+  onAddRule,
+  onRemoveRule,
+  subjects,
+}: {
+  title: string;
+  description: string;
+  draft: {
+    category: string;
+    title: string;
+    description: string;
+    subjectId: string;
+    minimumGrade: string;
+    minimumCount: string;
+  };
+  setDraft: React.Dispatch<
+    React.SetStateAction<{
+      category: string;
+      title: string;
+      description: string;
+      subjectId: string;
+      minimumGrade: string;
+      minimumCount: string;
+    }>
+  >;
+  rules: any[];
+  onAddRule: () => void;
+  onRemoveRule: (id: string) => void;
+  subjects: any[];
+}) {
+  return (
+    <div className="mt-6 rounded-control border border-rule bg-paper-soft p-4">
+      <div className="mb-3">
+        <h4 className="text-sm font-semibold text-primary">{title}</h4>
+        <p className="mt-1 text-xs text-secondary">{description}</p>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <div>
+          <label className="mb-1 block text-xs font-medium text-primary">
+            Category
+          </label>
+          <select
+            value={draft.category}
+            onChange={(e) =>
+              setDraft((current: any) => ({ ...current, category: e.target.value }))
+            }
+            className="min-h-11 w-full rounded-control border border-rule bg-white px-3 text-sm text-primary"
+          >
+            <option value="O_LEVEL">O Level</option>
+            <option value="A_LEVEL">A Level</option>
+            <option value="QUALIFICATION">Qualification</option>
+            <option value="ENTRANCE_EXAM">Entrance Exam</option>
+            <option value="EQUIVALENCY">Equivalency</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-primary">
+            Subject
+          </label>
+          <select
+            value={draft.subjectId}
+            onChange={(e) =>
+              setDraft((current: any) => ({ ...current, subjectId: e.target.value }))
+            }
+            className="min-h-11 w-full rounded-control border border-rule bg-white px-3 text-sm text-primary"
+          >
+            <option value="">Any subject</option>
+            {subjects.map((subject: any) => (
+              <option key={subject.id} value={subject.id}>
+                {subject.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="mb-1 block text-xs font-medium text-primary">
+            Rule title
+          </label>
+          <input
+            value={draft.title}
+            onChange={(e) =>
+              setDraft((current: any) => ({ ...current, title: e.target.value }))
+            }
+            placeholder="e.g. Mathematics requirement"
+            className="min-h-11 w-full rounded-control border border-rule bg-white px-3 text-sm text-primary placeholder:text-secondary"
+          />
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="mb-1 block text-xs font-medium text-primary">
+            Description
+          </label>
+          <textarea
+            rows={3}
+            value={draft.description}
+            onChange={(e) =>
+              setDraft((current: any) => ({ ...current, description: e.target.value }))
+            }
+            placeholder="Describe the requirement, grade, or condition."
+            className="w-full rounded-control border border-rule bg-white px-3 py-2 text-sm text-primary placeholder:text-secondary"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-primary">
+            Minimum grade
+          </label>
+          <input
+            value={draft.minimumGrade}
+            onChange={(e) =>
+              setDraft((current: any) => ({ ...current, minimumGrade: e.target.value }))
+            }
+            placeholder="e.g. B"
+            className="min-h-11 w-full rounded-control border border-rule bg-white px-3 text-sm text-primary placeholder:text-secondary"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-primary">
+            Minimum count
+          </label>
+          <input
+            type="number"
+            min="0"
+            value={draft.minimumCount}
+            onChange={(e) =>
+              setDraft((current: any) => ({ ...current, minimumCount: e.target.value }))
+            }
+            placeholder="e.g. 3"
+            className="min-h-11 w-full rounded-control border border-rule bg-white px-3 text-sm text-primary placeholder:text-secondary"
+          />
+        </div>
+      </div>
+
+      <div className="mt-4 flex justify-end">
+        <button
+          type="button"
+          onClick={onAddRule}
+          className="min-h-10 rounded-control bg-primary px-4 text-sm font-semibold text-white"
+        >
+          Add Rule
+        </button>
+      </div>
+
+      {rules.length === 0 ? (
+        <p className="mt-3 text-sm text-secondary">No rules added yet.</p>
+      ) : (
+        <div className="mt-3 space-y-2">
+          {rules.map((rule: any) => (
+            <div
+              key={rule.id || `${rule.title}-${rule.category}`}
+              className="flex items-center justify-between gap-3 rounded-control border border-rule bg-white px-3 py-2"
+            >
+              <div>
+                <p className="text-sm font-medium text-primary">{rule.title}</p>
+                <p className="text-xs text-secondary">
+                  {rule.category}
+                  {rule.minimumGrade ? ` • Min grade: ${rule.minimumGrade}` : ""}
+                  {rule.minimumCount !== undefined && rule.minimumCount !== null
+                    ? ` • Min count: ${rule.minimumCount}`
+                    : ""}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => onRemoveRule(rule.id)}
+                className="text-xs font-semibold text-red-600 hover:text-red-700"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AcademicStructureTab({
+  showToast,
+}: {
+  showToast: (variant: "success" | "error", message: string) => void;
+}) {
   const { data, isLoading } = useAdminUniversities();
   const createUniversity = useCreateAdminUniversity();
+  const updateUniversity = useUpdateAdminUniversity();
+  const deleteUniversity = useDeleteAdminUniversity();
+  const createUniversityAdmissionRule = useCreateUniversityAdmissionRule();
+  const updateUniversityAdmissionRule = useUpdateUniversityAdmissionRule();
+  const deleteUniversityAdmissionRule = useDeleteUniversityAdmissionRule();
 
   const universities = Array.isArray(data?.data) ? data.data : [];
 
   const [selectedUniversityId, setSelectedUniversityId] = useState("");
   const [selectedAcademicUnitId, setSelectedAcademicUnitId] =
     useState("");
+  const [selectedDepartmentId, setSelectedDepartmentId] =
+    useState("");
+
+  const { data: subjectsData } = useAdminSubjects(1, 200);
 
   const {
     data: academicUnitsData,
@@ -575,13 +1371,24 @@ function AcademicStructureTab() {
     ? departmentsData.data
     : [];
 
+  const { data: academicUnitRulesData, isLoading: academicUnitRulesLoading } =
+    useAcademicUnitAdmissionRules(selectedAcademicUnitId || undefined);
+  const { data: departmentRulesData, isLoading: departmentRulesLoading } =
+    useDepartmentAdmissionRules(selectedDepartmentId || undefined);
+
   const createDepartment = useCreateAdminDepartment();
   const updateDepartment = useUpdateAdminDepartment();
   const deleteDepartment = useDeleteAdminDepartment();
+  const createDepartmentAdmissionRule = useCreateDepartmentAdmissionRule();
+  const updateDepartmentAdmissionRule = useUpdateDepartmentAdmissionRule();
+  const deleteDepartmentAdmissionRule = useDeleteDepartmentAdmissionRule();
 
   const createAcademicUnit = useCreateAdminAcademicUnit();
   const updateAcademicUnit = useUpdateAdminAcademicUnit();
   const deleteAcademicUnit = useDeleteAdminAcademicUnit();
+  const createAcademicUnitAdmissionRule = useCreateAcademicUnitAdmissionRule();
+  const updateAcademicUnitAdmissionRule = useUpdateAcademicUnitAdmissionRule();
+  const deleteAcademicUnitAdmissionRule = useDeleteAcademicUnitAdmissionRule();
 
   const [universityName, setUniversityName] = useState("");
   const [universityAbbreviation, setUniversityAbbreviation] =
@@ -589,6 +1396,58 @@ function AcademicStructureTab() {
   const [universityWebsite, setUniversityWebsite] = useState("");
   const [universityDescription, setUniversityDescription] =
     useState("");
+  const [universityRuleDraft, setUniversityRuleDraft] = useState({
+    category: "O_LEVEL",
+    title: "",
+    description: "",
+    subjectId: "",
+    minimumGrade: "",
+    minimumCount: "",
+  });
+  const [universityRules, setUniversityRules] = useState<any[]>([]);
+
+  const resetUniversityRuleDraft = () => {
+    setUniversityRuleDraft({
+      category: "O_LEVEL",
+      title: "",
+      description: "",
+      subjectId: "",
+      minimumGrade: "",
+      minimumCount: "",
+    });
+  };
+
+  const addUniversityRule = () => {
+    const trimmedTitle = universityRuleDraft.title.trim();
+    const trimmedDescription = universityRuleDraft.description.trim();
+
+    if (!trimmedTitle || !trimmedDescription) {
+      showToast("error", "Rule title and description are required");
+      return;
+    }
+
+    setUniversityRules((current) => [
+      ...current,
+      {
+        id: `draft-${Date.now()}`,
+        ...universityRuleDraft,
+        title: trimmedTitle,
+        description: trimmedDescription,
+        minimumCount:
+          universityRuleDraft.minimumCount === ""
+            ? undefined
+            : Number(universityRuleDraft.minimumCount),
+      },
+    ]);
+
+    resetUniversityRuleDraft();
+  };
+
+  const removeUniversityRule = (id: string) => {
+    setUniversityRules((current) =>
+      current.filter((rule) => rule.id !== id),
+    );
+  };
 
   const [academicUnitModal, setAcademicUnitModal] = useState<{
     mode: "create" | "edit" | null;
@@ -603,6 +1462,58 @@ function AcademicStructureTab() {
   const [academicUnitDescription, setAcademicUnitDescription] =
     useState("");
   const [academicUnitType, setAcademicUnitType] = useState("");
+  const [academicUnitRuleDraft, setAcademicUnitRuleDraft] = useState({
+    category: "O_LEVEL",
+    title: "",
+    description: "",
+    subjectId: "",
+    minimumGrade: "",
+    minimumCount: "",
+  });
+  const [academicUnitRules, setAcademicUnitRules] = useState<any[]>([]);
+
+  const resetAcademicUnitRuleDraft = () => {
+    setAcademicUnitRuleDraft({
+      category: "O_LEVEL",
+      title: "",
+      description: "",
+      subjectId: "",
+      minimumGrade: "",
+      minimumCount: "",
+    });
+  };
+
+  const addAcademicUnitRule = () => {
+    const trimmedTitle = academicUnitRuleDraft.title.trim();
+    const trimmedDescription = academicUnitRuleDraft.description.trim();
+
+    if (!trimmedTitle || !trimmedDescription) {
+      showToast("error", "Rule title and description are required");
+      return;
+    }
+
+    setAcademicUnitRules((current) => [
+      ...current,
+      {
+        id: `draft-${Date.now()}`,
+        ...academicUnitRuleDraft,
+        title: trimmedTitle,
+        description: trimmedDescription,
+        minimumCount:
+          academicUnitRuleDraft.minimumCount === ""
+            ? undefined
+            : Number(academicUnitRuleDraft.minimumCount),
+      },
+    ]);
+
+    resetAcademicUnitRuleDraft();
+  };
+
+  const removeAcademicUnitRule = (id: string) => {
+    setAcademicUnitRules((current) =>
+      current.filter((rule) => rule.id !== id),
+    );
+  };
 
   const [departmentModal, setDepartmentModal] = useState<{
     mode: "create" | "edit" | null;
@@ -618,8 +1529,60 @@ function AcademicStructureTab() {
     useState("");
   const [departmentAcademicUnitId, setDepartmentAcademicUnitId] =
     useState("");
+  const [departmentRuleDraft, setDepartmentRuleDraft] = useState({
+    category: "O_LEVEL",
+    title: "",
+    description: "",
+    subjectId: "",
+    minimumGrade: "",
+    minimumCount: "",
+  });
+  const [departmentRules, setDepartmentRules] = useState<any[]>([]);
 
-  const handleCreateUniversity = () => {
+  const resetDepartmentRuleDraft = () => {
+    setDepartmentRuleDraft({
+      category: "O_LEVEL",
+      title: "",
+      description: "",
+      subjectId: "",
+      minimumGrade: "",
+      minimumCount: "",
+    });
+  };
+
+  const addDepartmentRule = () => {
+    const trimmedTitle = departmentRuleDraft.title.trim();
+    const trimmedDescription = departmentRuleDraft.description.trim();
+
+    if (!trimmedTitle || !trimmedDescription) {
+      showToast("error", "Rule title and description are required");
+      return;
+    }
+
+    setDepartmentRules((current) => [
+      ...current,
+      {
+        id: `draft-${Date.now()}`,
+        ...departmentRuleDraft,
+        title: trimmedTitle,
+        description: trimmedDescription,
+        minimumCount:
+          departmentRuleDraft.minimumCount === ""
+            ? undefined
+            : Number(departmentRuleDraft.minimumCount),
+      },
+    ]);
+
+    resetDepartmentRuleDraft();
+  };
+
+  const removeDepartmentRule = (id: string) => {
+    setDepartmentRules((current) =>
+      current.filter((rule) => rule.id !== id),
+    );
+  };
+
+  const handleCreateUniversity = async () => {
     const name = universityName.trim();
     const abbreviation = universityAbbreviation.trim();
     const website = universityWebsite.trim();
@@ -629,22 +1592,47 @@ function AcademicStructureTab() {
       return;
     }
 
-    createUniversity.mutate(
-      {
+    try {
+      const createdUniversity = await createUniversity.mutateAsync({
         name,
         abbreviation,
         website: website || undefined,
         description: description || undefined,
-      },
-      {
-        onSuccess: () => {
-          setUniversityName("");
-          setUniversityAbbreviation("");
-          setUniversityWebsite("");
-          setUniversityDescription("");
-        },
-      },
-    );
+      });
+
+      const universityId = createdUniversity?.data?.id;
+
+      if (universityId) {
+        await Promise.all(
+          universityRules.map((rule) =>
+            createUniversityAdmissionRule.mutateAsync({
+              universityId,
+              input: {
+                category: rule.category,
+                title: rule.title,
+                description: rule.description,
+                subjectId: rule.subjectId || undefined,
+                minimumGrade: rule.minimumGrade || undefined,
+                minimumCount:
+                  rule.minimumCount !== undefined && rule.minimumCount !== null
+                    ? Number(rule.minimumCount)
+                    : undefined,
+              },
+            }),
+          ),
+        );
+      }
+
+      setUniversityName("");
+      setUniversityAbbreviation("");
+      setUniversityWebsite("");
+      setUniversityDescription("");
+      setUniversityRules([]);
+      resetUniversityRuleDraft();
+      showToast("success", "University created");
+    } catch (err: any) {
+      showToast("error", err.message || "Unable to create university");
+    }
   };
 
   const getAcademicUnitType = (unit: any) => {
@@ -671,6 +1659,8 @@ function AcademicStructureTab() {
     setAcademicUnitName("");
     setAcademicUnitAbbreviation("");
     setAcademicUnitDescription("");
+    setAcademicUnitRules([]);
+    resetAcademicUnitRuleDraft();
 
     const defaultType =
       academicUnitTypes.find(
@@ -703,6 +1693,15 @@ function AcademicStructureTab() {
     setAcademicUnitAbbreviation(unit?.abbreviation || "");
     setAcademicUnitDescription(unit?.description || "");
     setAcademicUnitType(typeCode);
+    setAcademicUnitRules(Array.isArray(unit?.admissionRules) ? unit.admissionRules : []);
+    setAcademicUnitRuleDraft({
+      category: "O_LEVEL",
+      title: "",
+      description: "",
+      subjectId: "",
+      minimumGrade: "",
+      minimumCount: "",
+    });
 
     setAcademicUnitModal({
       mode: "edit",
@@ -718,7 +1717,7 @@ function AcademicStructureTab() {
     resetAcademicUnitForm();
   };
 
-  const handleSaveAcademicUnit = () => {
+  const handleSaveAcademicUnit = async () => {
     const name = academicUnitName.trim();
     const abbreviation = academicUnitAbbreviation.trim();
     const description = academicUnitDescription.trim();
@@ -728,31 +1727,52 @@ function AcademicStructureTab() {
       return;
     }
 
-    if (academicUnitModal.mode === "create") {
-      createAcademicUnit.mutate(
-        {
+    try {
+      if (academicUnitModal.mode === "create") {
+        const created = await createAcademicUnit.mutateAsync({
           name,
           abbreviation: abbreviation || undefined,
           description: description || undefined,
           universityId: selectedUniversityId,
           type,
-        },
-        {
-          onSuccess: () => {
-            closeAcademicUnitModal();
-          },
-        },
-      );
+        });
 
-      return;
-    }
+        const academicUnitId = created?.data?.id;
 
-    if (
-      academicUnitModal.mode === "edit" &&
-      academicUnitModal.item?.id
-    ) {
-      updateAcademicUnit.mutate(
-        {
+        if (academicUnitId) {
+          await Promise.all(
+            academicUnitRules.map((rule) =>
+              createAcademicUnitAdmissionRule.mutateAsync({
+                academicUnitId,
+                input: {
+                  category: rule.category,
+                  title: rule.title,
+                  description: rule.description,
+                  subjectId: rule.subjectId || undefined,
+                  minimumGrade: rule.minimumGrade || undefined,
+                  minimumCount:
+                    rule.minimumCount !== undefined && rule.minimumCount !== null
+                      ? Number(rule.minimumCount)
+                      : undefined,
+                },
+              }),
+            ),
+          );
+        }
+
+        closeAcademicUnitModal();
+        return;
+      }
+
+      if (
+        academicUnitModal.mode === "edit" &&
+        academicUnitModal.item?.id
+      ) {
+        const existingRules = Array.isArray(academicUnitModal.item?.admissionRules)
+          ? academicUnitModal.item.admissionRules
+          : [];
+
+        await updateAcademicUnit.mutateAsync({
           id: academicUnitModal.item.id,
           input: {
             name,
@@ -760,13 +1780,78 @@ function AcademicStructureTab() {
             description,
             type,
           },
-        },
-        {
-          onSuccess: () => {
-            closeAcademicUnitModal();
-          },
-        },
-      );
+        });
+
+        const existingRuleIds = new Set(
+          existingRules
+            .filter((rule: any) => rule?.id)
+            .map((rule: any) => rule.id),
+        );
+
+        const rulesToDelete = existingRules.filter(
+          (rule: any) => rule?.id && !academicUnitRules.some((next: any) => next.id === rule.id),
+        );
+
+        const rulesToCreate = academicUnitRules.filter(
+          (rule: any) => !rule?.id || !existingRuleIds.has(rule.id),
+        );
+
+        const rulesToUpdate = academicUnitRules.filter(
+          (rule: any) => rule?.id && existingRuleIds.has(rule.id),
+        );
+
+        await Promise.all(
+          rulesToDelete.map((rule: any) =>
+            deleteAcademicUnitAdmissionRule.mutateAsync({
+              academicUnitId: academicUnitModal.item.id,
+              id: rule.id,
+            }),
+          ),
+        );
+
+        await Promise.all(
+          rulesToUpdate.map((rule: any) =>
+            updateAcademicUnitAdmissionRule.mutateAsync({
+              academicUnitId: academicUnitModal.item.id,
+              id: rule.id,
+              input: {
+                category: rule.category,
+                title: rule.title,
+                description: rule.description,
+                subjectId: rule.subjectId || undefined,
+                minimumGrade: rule.minimumGrade || undefined,
+                minimumCount:
+                  rule.minimumCount !== undefined && rule.minimumCount !== null
+                    ? Number(rule.minimumCount)
+                    : undefined,
+              },
+            }),
+          ),
+        );
+
+        await Promise.all(
+          rulesToCreate.map((rule) =>
+            createAcademicUnitAdmissionRule.mutateAsync({
+              academicUnitId: academicUnitModal.item.id,
+              input: {
+                category: rule.category,
+                title: rule.title,
+                description: rule.description,
+                subjectId: rule.subjectId || undefined,
+                minimumGrade: rule.minimumGrade || undefined,
+                minimumCount:
+                  rule.minimumCount !== undefined && rule.minimumCount !== null
+                    ? Number(rule.minimumCount)
+                    : undefined,
+              },
+            }),
+          ),
+        );
+
+        closeAcademicUnitModal();
+      }
+    } catch (err: any) {
+      showToast("error", err.message || "Unable to save academic unit");
     }
   };
 
@@ -787,8 +1872,9 @@ function AcademicStructureTab() {
       onSuccess: () => {
         if (selectedAcademicUnitId === unit.id) {
           setSelectedAcademicUnitId("");
-        }
-      },
+            setSelectedDepartmentId("");
+          }
+        },
     });
   };
 
@@ -797,10 +1883,13 @@ function AcademicStructureTab() {
     setDepartmentAbbreviation("");
     setDepartmentDescription("");
     setDepartmentAcademicUnitId(selectedAcademicUnitId);
+    setDepartmentRules([]);
+    resetDepartmentRuleDraft();
   };
 
   const openCreateDepartment = () => {
     resetDepartmentForm();
+    setSelectedDepartmentId("");
 
     setDepartmentModal({
       mode: "create",
@@ -808,6 +1897,7 @@ function AcademicStructureTab() {
   };
 
   const openEditDepartment = (department: any) => {
+    setSelectedDepartmentId(department?.id || "");
     setDepartmentName(department?.name || "");
     setDepartmentAbbreviation(
       department?.abbreviation || "",
@@ -820,6 +1910,19 @@ function AcademicStructureTab() {
         department?.academicUnit?.id ||
         selectedAcademicUnitId,
     );
+    setDepartmentRules(
+      Array.isArray(department?.admissionRules)
+        ? department.admissionRules
+        : [],
+    );
+    setDepartmentRuleDraft({
+      category: "O_LEVEL",
+      title: "",
+      description: "",
+      subjectId: "",
+      minimumGrade: "",
+      minimumCount: "",
+    });
 
     setDepartmentModal({
       mode: "edit",
@@ -835,7 +1938,7 @@ function AcademicStructureTab() {
     resetDepartmentForm();
   };
 
-  const handleSaveDepartment = () => {
+  const handleSaveDepartment = async () => {
     const name = departmentName.trim();
     const abbreviation = departmentAbbreviation.trim();
     const description = departmentDescription.trim();
@@ -844,30 +1947,51 @@ function AcademicStructureTab() {
       return;
     }
 
-    if (departmentModal.mode === "create") {
-      createDepartment.mutate(
-        {
+    try {
+      if (departmentModal.mode === "create") {
+        const created = await createDepartment.mutateAsync({
           name,
           abbreviation: abbreviation || undefined,
           description: description || undefined,
           academicUnitId: departmentAcademicUnitId,
-        },
-        {
-          onSuccess: () => {
-            closeDepartmentModal();
-          },
-        },
-      );
+        });
 
-      return;
-    }
+        const departmentId = created?.data?.id;
 
-    if (
-      departmentModal.mode === "edit" &&
-      departmentModal.item?.id
-    ) {
-      updateDepartment.mutate(
-        {
+        if (departmentId) {
+          await Promise.all(
+            departmentRules.map((rule) =>
+              createDepartmentAdmissionRule.mutateAsync({
+                departmentId,
+                input: {
+                  category: rule.category,
+                  title: rule.title,
+                  description: rule.description,
+                  subjectId: rule.subjectId || undefined,
+                  minimumGrade: rule.minimumGrade || undefined,
+                  minimumCount:
+                    rule.minimumCount !== undefined && rule.minimumCount !== null
+                      ? Number(rule.minimumCount)
+                      : undefined,
+                },
+              }),
+            ),
+          );
+        }
+
+        closeDepartmentModal();
+        return;
+      }
+
+      if (
+        departmentModal.mode === "edit" &&
+        departmentModal.item?.id
+      ) {
+        const existingRules = Array.isArray(departmentModal.item?.admissionRules)
+          ? departmentModal.item.admissionRules
+          : [];
+
+        await updateDepartment.mutateAsync({
           id: departmentModal.item.id,
           input: {
             name,
@@ -875,13 +1999,78 @@ function AcademicStructureTab() {
             description,
             academicUnitId: departmentAcademicUnitId,
           },
-        },
-        {
-          onSuccess: () => {
-            closeDepartmentModal();
-          },
-        },
-      );
+        });
+
+        const existingRuleIds = new Set(
+          existingRules
+            .filter((rule: any) => rule?.id)
+            .map((rule: any) => rule.id),
+        );
+
+        const rulesToDelete = existingRules.filter(
+          (rule: any) => rule?.id && !departmentRules.some((next: any) => next.id === rule.id),
+        );
+
+        const rulesToCreate = departmentRules.filter(
+          (rule: any) => !rule?.id || !existingRuleIds.has(rule.id),
+        );
+
+        const rulesToUpdate = departmentRules.filter(
+          (rule: any) => rule?.id && existingRuleIds.has(rule.id),
+        );
+
+        await Promise.all(
+          rulesToDelete.map((rule: any) =>
+            deleteDepartmentAdmissionRule.mutateAsync({
+              departmentId: departmentModal.item.id,
+              id: rule.id,
+            }),
+          ),
+        );
+
+        await Promise.all(
+          rulesToUpdate.map((rule: any) =>
+            updateDepartmentAdmissionRule.mutateAsync({
+              departmentId: departmentModal.item.id,
+              id: rule.id,
+              input: {
+                category: rule.category,
+                title: rule.title,
+                description: rule.description,
+                subjectId: rule.subjectId || undefined,
+                minimumGrade: rule.minimumGrade || undefined,
+                minimumCount:
+                  rule.minimumCount !== undefined && rule.minimumCount !== null
+                    ? Number(rule.minimumCount)
+                    : undefined,
+              },
+            }),
+          ),
+        );
+
+        await Promise.all(
+          rulesToCreate.map((rule) =>
+            createDepartmentAdmissionRule.mutateAsync({
+              departmentId: departmentModal.item.id,
+              input: {
+                category: rule.category,
+                title: rule.title,
+                description: rule.description,
+                subjectId: rule.subjectId || undefined,
+                minimumGrade: rule.minimumGrade || undefined,
+                minimumCount:
+                  rule.minimumCount !== undefined && rule.minimumCount !== null
+                    ? Number(rule.minimumCount)
+                    : undefined,
+              },
+            }),
+          ),
+        );
+
+        closeDepartmentModal();
+      }
+    } catch (err: any) {
+      showToast("error", err.message || "Unable to save department");
     }
   };
 
@@ -964,6 +2153,17 @@ function AcademicStructureTab() {
           />
         </div>
 
+        <RuleDraftComposer
+          title="University admission rules"
+          description="Add default admission rules that apply to this university."
+          draft={universityRuleDraft}
+          setDraft={setUniversityRuleDraft}
+          rules={universityRules}
+          onAddRule={addUniversityRule}
+          onRemoveRule={removeUniversityRule}
+          subjects={subjectsData?.data || []}
+        />
+
         <div className="mt-4 flex justify-end">
           <button
             type="button"
@@ -1015,6 +2215,7 @@ function AcademicStructureTab() {
             onChange={(e) => {
               setSelectedUniversityId(e.target.value);
               setSelectedAcademicUnitId("");
+              setSelectedDepartmentId("");
             }}
             className="min-h-11 w-full rounded-control border border-rule bg-white px-3 text-sm text-primary md:max-w-xl"
           >
@@ -1034,6 +2235,20 @@ function AcademicStructureTab() {
             ))}
           </select>
         </div>
+
+        {selectedUniversityId && (
+          <UniversityAdmissionRulesPanel
+            universityId={selectedUniversityId}
+            showToast={showToast}
+          />
+        )}
+
+        {selectedUniversityId && selectedAcademicUnitId && (
+          <AcademicUnitAdmissionRulesPanel
+            academicUnitId={selectedAcademicUnitId}
+            showToast={showToast}
+          />
+        )}
 
         {selectedUniversityId && (
           <div className="mt-5">
@@ -1081,11 +2296,10 @@ function AcademicStructureTab() {
                       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                         <button
                           type="button"
-                          onClick={() =>
-                            setSelectedAcademicUnitId(
-                              unit.id,
-                            )
-                          }
+                          onClick={() => {
+                            setSelectedAcademicUnitId(unit.id);
+                            setSelectedDepartmentId("");
+                          }}
                           className="text-left"
                         >
                           <p className="font-medium text-primary">
@@ -1129,9 +2343,8 @@ function AcademicStructureTab() {
                           <button
                             type="button"
                             onClick={() => {
-                              setSelectedAcademicUnitId(
-                                unit.id,
-                              );
+                              setSelectedAcademicUnitId(unit.id);
+                              setSelectedDepartmentId("");
                               resetDepartmentForm();
                               setDepartmentModal({
                                 mode: "create",
@@ -1215,6 +2428,18 @@ function AcademicStructureTab() {
                                           <button
                                             type="button"
                                             onClick={() =>
+                                              setSelectedDepartmentId(
+                                                department.id,
+                                              )
+                                            }
+                                            className="min-h-9 rounded-control border border-rule-strong px-3 text-xs font-semibold text-primary hover:border-accent hover:bg-paper-soft"
+                                          >
+                                            Rules
+                                          </button>
+
+                                          <button
+                                            type="button"
+                                            onClick={() =>
                                               openEditDepartment(
                                                 department,
                                               )
@@ -1256,6 +2481,13 @@ function AcademicStructureTab() {
           </div>
         )}
       </div>
+
+      {selectedDepartmentId && (
+        <DepartmentAdmissionRulesPanel
+          departmentId={selectedDepartmentId}
+          showToast={showToast}
+        />
+      )}
 
       {academicUnitModal.mode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -1369,6 +2601,17 @@ function AcademicStructureTab() {
                 className="w-full rounded-control border border-rule bg-white px-3 py-2 text-sm text-primary placeholder:text-secondary"
               />
             </div>
+
+            <RuleDraftComposer
+              title="Academic unit admission rules"
+              description="Add rules for this academic unit during save."
+              draft={academicUnitRuleDraft}
+              setDraft={setAcademicUnitRuleDraft}
+              rules={academicUnitRules}
+              onAddRule={addAcademicUnitRule}
+              onRemoveRule={removeAcademicUnitRule}
+              subjects={subjectsData?.data || []}
+            />
 
             <div className="mt-6 flex justify-end gap-3">
               <button
@@ -1492,6 +2735,17 @@ function AcademicStructureTab() {
               />
             </div>
 
+            <RuleDraftComposer
+              title="Department admission rules"
+              description="Add rules for this department during save."
+              draft={departmentRuleDraft}
+              setDraft={setDepartmentRuleDraft}
+              rules={departmentRules}
+              onAddRule={addDepartmentRule}
+              onRemoveRule={removeDepartmentRule}
+              subjects={subjectsData?.data || []}
+            />
+
             <div className="mt-6 flex justify-end gap-3">
               <button
                 type="button"
@@ -1593,6 +2847,15 @@ function ProgrammesTab({
     level: "UNDERGRADUATE",
     duration: "",
     description: "",
+    sourceCode: "",
+    applicationDeadline: "",
+    applicationStatus: "Open",
+    entryRequirements: "",
+    feeAmount: "",
+    feePeriod: "UNKNOWN",
+    academicYear: "2026/2027",
+    careerNames: "",
+    keywordNames: "",
     universityId: "",
     academicUnitId: "",
     departmentId: "",
@@ -1661,9 +2924,37 @@ function ProgrammesTab({
       level: item.level || "UNDERGRADUATE",
       duration:
         item.duration !== undefined && item.duration !== null
-         ? String(item.duration)
-         : "",
+          ? String(item.duration)
+          : "",
       description: item.description || "",
+      sourceCode: item.sourceCode || "",
+      applicationDeadline: item.applicationDeadline
+        ? new Date(item.applicationDeadline)
+            .toISOString()
+            .slice(0, 10)
+        : "",
+      applicationStatus: item.applicationStatus || "Open",
+      entryRequirements: item.entryRequirements || "",
+      feeAmount:
+        item.tuition?.[0]?.amount !== undefined &&
+        item.tuition?.[0]?.amount !== null
+          ? String(item.tuition[0].amount)
+          : "",
+      feePeriod: item.tuition?.[0]?.feePeriod || "UNKNOWN",
+      academicYear:
+        item.tuition?.[0]?.academicYear ||
+        item.applicationCycle ||
+        "2026/2027",
+      careerNames:
+        item.careers
+          ?.map((entry: any) => entry.career?.name || entry.name)
+          .filter(Boolean)
+          .join(", ") || "",
+      keywordNames:
+        item.keywords
+          ?.map((entry: any) => entry.keyword?.word || entry.word)
+          .filter(Boolean)
+          .join(", ") || "",
       universityId,
       academicUnitId,
       departmentId: item.departmentId || "",
@@ -1728,6 +3019,28 @@ function ProgrammesTab({
         level: form.level,
         duration: form.duration.trim() || undefined,
         description: form.description.trim() || undefined,
+        sourceCode: form.sourceCode.trim() || undefined,
+        applicationDeadline: form.applicationDeadline || undefined,
+        applicationStatus: form.applicationStatus || undefined,
+        entryRequirements: form.entryRequirements.trim() || undefined,
+        feeAmount:
+          form.feeAmount === ""
+            ? undefined
+            : Number(form.feeAmount),
+        feePeriod: form.feePeriod || undefined,
+        academicYear: form.academicYear || undefined,
+        careerNames: form.careerNames
+          ? form.careerNames
+              .split(/[\n,;]+/)
+              .map((value: string) => value.trim())
+              .filter(Boolean)
+          : undefined,
+        keywordNames: form.keywordNames
+          ? form.keywordNames
+              .split(/[\n,;]+/)
+              .map((value: string) => value.trim())
+              .filter(Boolean)
+          : undefined,
         departmentId: form.departmentId,
         isActive: form.isActive,
         isFeatured: form.isFeatured,
@@ -2190,6 +3503,183 @@ function ProgrammesTab({
               />
             </div>
 
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-medium">
+                  Official code
+                </label>
+
+                <input
+                  type="text"
+                  value={form.sourceCode}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      sourceCode: e.target.value,
+                    })
+                  }
+                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium">
+                  Application status
+                </label>
+
+                <select
+                  value={form.applicationStatus}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      applicationStatus: e.target.value,
+                    })
+                  }
+                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+                >
+                  <option value="Open">Open</option>
+                  <option value="Closed">Closed</option>
+                  <option value="Upcoming">Upcoming</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                Application deadline
+              </label>
+
+              <input
+                type="date"
+                value={form.applicationDeadline}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    applicationDeadline: e.target.value,
+                  })
+                }
+                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                Entry requirements
+              </label>
+
+              <textarea
+                value={form.entryRequirements}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    entryRequirements: e.target.value,
+                  })
+                }
+                rows={4}
+                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+              />
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium">
+                  Fee (XAF)
+                </label>
+
+                <input
+                  type="number"
+                  min="0"
+                  value={form.feeAmount}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      feeAmount: e.target.value,
+                    })
+                  }
+                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium">
+                  Fee period
+                </label>
+
+                <select
+                  value={form.feePeriod}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      feePeriod: e.target.value,
+                    })
+                  }
+                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+                >
+                  <option value="UNKNOWN">Unknown</option>
+                  <option value="ANNUAL">Annual</option>
+                  <option value="FIRST_YEAR">First year</option>
+                  <option value="PROGRAMME_TOTAL">Programme total</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium">
+                  Academic year
+                </label>
+
+                <input
+                  type="text"
+                  value={form.academicYear}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      academicYear: e.target.value,
+                    })
+                  }
+                  placeholder="2026/2027"
+                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                Career outcomes (comma-separated)
+              </label>
+
+              <input
+                type="text"
+                value={form.careerNames}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    careerNames: e.target.value,
+                  })
+                }
+                placeholder="Software Engineer, Data Analyst"
+                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                Keywords (comma-separated)
+              </label>
+
+              <input
+                type="text"
+                value={form.keywordNames}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    keywordNames: e.target.value,
+                  })
+                }
+                placeholder="technology, science, research"
+                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+              />
+            </div>
+
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -2298,6 +3788,11 @@ function CatalogueReviewTab({
       applicationStatus:
         item.applicationStatus || "Open",
       sourceCode: item.sourceCode || "",
+      entryRequirements: item.entryRequirements || "",
+      careerNames:
+        item.careers?.map((career: any) => career.name).join(", ") || "",
+      keywordNames:
+        item.keywords?.map((keyword: any) => keyword.word).join(", ") || "",
       feeAmount: item.tuition?.[0]?.amount || "",
       feePeriod:
         item.tuition?.[0]?.feePeriod || "UNKNOWN",
@@ -2318,6 +3813,22 @@ function CatalogueReviewTab({
             form.feeAmount === ""
               ? undefined
               : Number(form.feeAmount),
+          entryRequirements:
+            form.entryRequirements?.trim() || undefined,
+          careerNames:
+            form.careerNames
+              ? form.careerNames
+                  .split(/[\n,;]+/)
+                  .map((v: string) => v.trim())
+                  .filter(Boolean)
+              : undefined,
+          keywordNames:
+            form.keywordNames
+              ? form.keywordNames
+                  .split(/[\n,;]+/)
+                  .map((v: string) => v.trim())
+                  .filter(Boolean)
+              : undefined,
         },
       });
 
@@ -2469,6 +3980,49 @@ function CatalogueReviewTab({
                 <option>Open</option>
                 <option>Closed</option>
               </select>
+            </label>
+
+            <label className="block text-sm">
+              Entry requirements
+              <textarea
+                value={form.entryRequirements || ""}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    entryRequirements: e.target.value,
+                  })
+                }
+                rows={4}
+                className="mt-1 w-full rounded border p-2 dark:bg-zinc-800"
+              />
+            </label>
+
+            <label className="block text-sm">
+              Career outcomes (comma-separated)
+              <input
+                value={form.careerNames || ""}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    careerNames: e.target.value,
+                  })
+                }
+                className="mt-1 w-full rounded border p-2 dark:bg-zinc-800"
+              />
+            </label>
+
+            <label className="block text-sm">
+              Keywords (comma-separated)
+              <input
+                value={form.keywordNames || ""}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    keywordNames: e.target.value,
+                  })
+                }
+                className="mt-1 w-full rounded border p-2 dark:bg-zinc-800"
+              />
             </label>
 
             <div className="grid grid-cols-2 gap-3">
@@ -3946,310 +5500,683 @@ function KeywordsTab({
 }
 
 function AdmissionRulesTab({
-  page,
-  setPage,
   showToast,
 }: any) {
-  const { data, isLoading } =
-    useAdminAdmissionRules(page, 50);
+  const { data: universitiesData, isLoading: universitiesLoading } =
+    useAdminUniversities();
+  const universities = useMemo(() => {
+    const data = universitiesData?.data || universitiesData;
+    return Array.isArray(data) ? data : [];
+  }, [universitiesData]);
 
-  const createMutation =
-    useCreateAdmissionRule();
+  const [selectedUniversityId, setSelectedUniversityId] = useState("");
+  const [selectedAcademicUnitId, setSelectedAcademicUnitId] = useState("");
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
+  const [selectedProgrammeId, setSelectedProgrammeId] = useState("");
 
-  const updateMutation =
-    useUpdateAdmissionRule();
+  const { data: academicUnitsData, isLoading: academicUnitsLoading } =
+    useAdminFaculties(selectedUniversityId || undefined);
+  const academicUnits = useMemo(() => {
+    const data = academicUnitsData?.data || academicUnitsData;
+    return Array.isArray(data) ? data : [];
+  }, [academicUnitsData]);
 
-  const deleteMutation =
-    useDeleteAdmissionRule();
+  const { data: departmentsData, isLoading: departmentsLoading } =
+    useAdminDepartments({
+      universityId: selectedUniversityId || undefined,
+      academicUnitId: selectedAcademicUnitId || undefined,
+      page: 1,
+      limit: 200,
+    });
+  const departments = useMemo(() => {
+    const data = departmentsData?.data || departmentsData;
+    return Array.isArray(data) ? data : [];
+  }, [departmentsData]);
+
+  const { data: programmesData, isLoading: programmesLoading } =
+    useAdminProgrammes(1, 500);
+  const programmes = useMemo(() => {
+    const data = programmesData?.data || programmesData;
+    const items = Array.isArray(data) ? data : [];
+
+    if (!selectedUniversityId && !selectedAcademicUnitId && !selectedDepartmentId) {
+      return items;
+    }
+
+    return items.filter((programme: any) => {
+      if (selectedDepartmentId) {
+        return programme.departmentId === selectedDepartmentId;
+      }
+
+      if (selectedAcademicUnitId) {
+        return (
+          programme.department?.academicUnitId === selectedAcademicUnitId ||
+          programme.department?.academicUnit?.id === selectedAcademicUnitId
+        );
+      }
+
+      if (selectedUniversityId) {
+        return (
+          programme.department?.academicUnit?.universityId === selectedUniversityId ||
+          programme.department?.academicUnit?.university?.id === selectedUniversityId
+        );
+      }
+
+      return true;
+    });
+  }, [programmesData, selectedUniversityId, selectedAcademicUnitId, selectedDepartmentId]);
+
+  const { data: universityRulesData, isLoading: universityRulesLoading } =
+    useUniversityAdmissionRules(selectedUniversityId || undefined);
+  const { data: academicUnitRulesData, isLoading: academicUnitRulesLoading } =
+    useAcademicUnitAdmissionRules(selectedAcademicUnitId || undefined);
+  const { data: departmentRulesData, isLoading: departmentRulesLoading } =
+    useDepartmentAdmissionRules(selectedDepartmentId || undefined);
+  const { data: programmeRulesData, isLoading: programmeRulesLoading } =
+    useProgrammeAdmissionRules(selectedProgrammeId || undefined);
+
+  const activeLevel = useMemo(() => {
+    if (selectedProgrammeId) return "programme";
+    if (selectedDepartmentId) return "department";
+    if (selectedAcademicUnitId) return "academicUnit";
+    if (selectedUniversityId) return "university";
+    return null;
+  }, [selectedProgrammeId, selectedDepartmentId, selectedAcademicUnitId, selectedUniversityId]);
+
+  const activeLabel = useMemo(() => {
+    if (activeLevel === "programme") {
+      const programme = programmes.find((item: any) => item.id === selectedProgrammeId);
+      return programme?.name || "Selected programme";
+    }
+
+    if (activeLevel === "department") {
+      const department = departments.find((item: any) => item.id === selectedDepartmentId);
+      return department?.name || "Selected department";
+    }
+
+    if (activeLevel === "academicUnit") {
+      const academicUnit = academicUnits.find((item: any) => item.id === selectedAcademicUnitId);
+      return academicUnit?.name || "Selected academic unit";
+    }
+
+    if (activeLevel === "university") {
+      const university = universities.find((item: any) => item.id === selectedUniversityId);
+      return university?.name || "Selected university";
+    }
+
+    return "University policy";
+  }, [activeLevel, programmes, departments, academicUnits, universities, selectedProgrammeId, selectedDepartmentId, selectedAcademicUnitId, selectedUniversityId]);
+
+  const activeRules = useMemo(() => {
+    switch (activeLevel) {
+      case "programme":
+        return Array.isArray(programmeRulesData?.data) ? programmeRulesData.data : [];
+      case "department":
+        return Array.isArray(departmentRulesData?.data) ? departmentRulesData.data : [];
+      case "academicUnit":
+        return Array.isArray(academicUnitRulesData?.data) ? academicUnitRulesData.data : [];
+      case "university":
+        return Array.isArray(universityRulesData?.data) ? universityRulesData.data : [];
+      default:
+        return [];
+    }
+  }, [activeLevel, programmeRulesData, departmentRulesData, academicUnitRulesData, universityRulesData]);
 
   const [modal, setModal] = useState<{
     mode: ModalMode;
+    level: "university" | "academicUnit" | "department" | "programme";
     item?: any;
-  }>({ mode: null });
+  }>({ mode: null, level: "university" });
 
   const [form, setForm] = useState({
+    category: "O_LEVEL",
     title: "",
     description: "",
-    isActive: true,
+    subjectId: "",
+    minimumGrade: "",
+    minimumCount: "",
+    text: "",
   });
 
-  const items = useMemo(() => {
-    if (Array.isArray(data?.data)) return data.data;
-    if (Array.isArray(data)) return data;
-    return [];
-  }, [data]);
-
-  const openCreate = () => {
+  const resetForm = () => {
     setForm({
+      category: "O_LEVEL",
       title: "",
       description: "",
-      isActive: true,
+      subjectId: "",
+      minimumGrade: "",
+      minimumCount: "",
+      text: "",
     });
+  };
 
-    setModal({ mode: "create" });
+  const openCreate = () => {
+    resetForm();
+    setModal({
+      mode: "create",
+      level: activeLevel || "university",
+    });
   };
 
   const openEdit = (item: any) => {
     setForm({
-      title: item.title,
-      description: item.description,
-      isActive: item.isActive,
+      category: item.category || "O_LEVEL",
+      title: item.title || "",
+      description: item.description || "",
+      subjectId: item.subjectId || "",
+      minimumGrade: item.minimumGrade || "",
+      minimumCount: item.minimumCount !== undefined && item.minimumCount !== null ? String(item.minimumCount) : "",
+      text: item.text || "",
     });
 
-    setModal({ mode: "edit", item });
+    setModal({
+      mode: "edit",
+      level: activeLevel || "university",
+      item,
+    });
   };
 
-  const handleSubmit = async () => {
-    try {
-      if (modal.mode === "create") {
-        await createMutation.mutateAsync(form);
-        showToast(
-          "success",
-          "Admission rule created",
-        );
-      } else if (
-        modal.mode === "edit" &&
-        modal.item
-      ) {
-        await updateMutation.mutateAsync({
-          id: modal.item.id,
-          input: form,
-        });
+  const createMutationMap = {
+    university: useCreateUniversityAdmissionRule(),
+    academicUnit: useCreateAcademicUnitAdmissionRule(),
+    department: useCreateDepartmentAdmissionRule(),
+    programme: useCreateProgrammeAdmissionRule(),
+  } as const;
 
-        showToast(
-          "success",
-          "Admission rule updated",
-        );
+  const updateMutationMap = {
+    university: useUpdateUniversityAdmissionRule(),
+    academicUnit: useUpdateAcademicUnitAdmissionRule(),
+    department: useUpdateDepartmentAdmissionRule(),
+    programme: useUpdateProgrammeAdmissionRule(),
+  } as const;
+
+  const deleteMutationMap = {
+    university: useDeleteUniversityAdmissionRule(),
+    academicUnit: useDeleteAcademicUnitAdmissionRule(),
+    department: useDeleteDepartmentAdmissionRule(),
+    programme: useDeleteProgrammeAdmissionRule(),
+  } as const;
+
+  const handleSubmit = async () => {
+    if (!activeLevel) {
+      showToast("error", "Select a university first to manage admissions rules.");
+      return;
+    }
+
+    const isProgrammeLevel = activeLevel === "programme";
+
+    if (isProgrammeLevel && !form.text.trim()) {
+      showToast("error", "Rule text is required.");
+      return;
+    }
+
+    if (!isProgrammeLevel && !form.title.trim()) {
+      showToast("error", "Rule title is required.");
+      return;
+    }
+
+    try {
+      const payload = isProgrammeLevel
+        ? {
+            category: form.category,
+            text: form.text.trim(),
+          }
+        : {
+            category: form.category,
+            title: form.title.trim(),
+            description: form.description.trim(),
+            subjectId: form.subjectId || undefined,
+            minimumGrade: form.minimumGrade.trim() || undefined,
+            minimumCount:
+              form.minimumCount === "" ? undefined : Number(form.minimumCount),
+          };
+
+      if (modal.mode === "create") {
+        if (activeLevel === "university") {
+          await createMutationMap.university.mutateAsync({
+            universityId: selectedUniversityId,
+            input: payload,
+          });
+        } else if (activeLevel === "academicUnit") {
+          await createMutationMap.academicUnit.mutateAsync({
+            academicUnitId: selectedAcademicUnitId,
+            input: payload,
+          });
+        } else if (activeLevel === "department") {
+          await createMutationMap.department.mutateAsync({
+            departmentId: selectedDepartmentId,
+            input: payload,
+          });
+        } else if (activeLevel === "programme") {
+          await createMutationMap.programme.mutateAsync({
+            programmeId: selectedProgrammeId,
+            input: payload,
+          });
+        }
+
+        showToast("success", `${activeLabel} rule created`);
+      } else if (modal.mode === "edit" && modal.item) {
+        if (activeLevel === "university") {
+          await updateMutationMap.university.mutateAsync({
+            universityId: selectedUniversityId,
+            id: modal.item.id,
+            input: payload,
+          });
+        } else if (activeLevel === "academicUnit") {
+          await updateMutationMap.academicUnit.mutateAsync({
+            academicUnitId: selectedAcademicUnitId,
+            id: modal.item.id,
+            input: payload,
+          });
+        } else if (activeLevel === "department") {
+          await updateMutationMap.department.mutateAsync({
+            departmentId: selectedDepartmentId,
+            id: modal.item.id,
+            input: payload,
+          });
+        } else if (activeLevel === "programme") {
+          await updateMutationMap.programme.mutateAsync({
+            programmeId: selectedProgrammeId,
+            id: modal.item.id,
+            input: payload,
+          });
+        }
+
+        showToast("success", `${activeLabel} rule updated`);
       }
 
-      setModal({ mode: null });
+      setModal({ mode: null, level: activeLevel || "university" });
+      resetForm();
     } catch (err: any) {
-      showToast("error", err.message);
+      showToast("error", err.message || "Unable to save admission rule");
     }
   };
 
   const handleDelete = async (item: any) => {
-    if (
-      !confirm(
-        "Delete this admission rule?",
-      )
-    )
-      return;
+    if (!item?.id) return;
+
+    if (!confirm("Delete this admission rule?")) return;
 
     try {
-      await deleteMutation.mutateAsync(
-        item.id,
-      );
+      if (activeLevel === "university") {
+        await deleteMutationMap.university.mutateAsync({
+          universityId: selectedUniversityId,
+          id: item.id,
+        });
+      } else if (activeLevel === "academicUnit") {
+        await deleteMutationMap.academicUnit.mutateAsync({
+          academicUnitId: selectedAcademicUnitId,
+          id: item.id,
+        });
+      } else if (activeLevel === "department") {
+        await deleteMutationMap.department.mutateAsync({
+          departmentId: selectedDepartmentId,
+          id: item.id,
+        });
+      } else if (activeLevel === "programme") {
+        await deleteMutationMap.programme.mutateAsync({
+          programmeId: selectedProgrammeId,
+          id: item.id,
+        });
+      }
 
-      showToast(
-        "success",
-        "Admission rule deleted",
-      );
+      showToast("success", "Admission rule deleted");
     } catch (err: any) {
-      showToast("error", err.message);
+      showToast("error", err.message || "Unable to delete admission rule");
     }
   };
 
+  const selectedLevelLoading =
+    (activeLevel === "university" && universityRulesLoading) ||
+    (activeLevel === "academicUnit" && academicUnitRulesLoading) ||
+    (activeLevel === "department" && departmentRulesLoading) ||
+    (activeLevel === "programme" && programmeRulesLoading);
+
+  const { data: subjectsData } = useAdminSubjects(1, 200);
+  const subjects = useMemo(() => {
+    const data = subjectsData?.data || subjectsData;
+    return Array.isArray(data) ? data : [];
+  }, [subjectsData]);
+
   return (
     <>
-      <div className="mb-4 flex items-center gap-3">
-        <p className="text-sm text-zinc-500">
-          Manage general admission rules for the university.
-        </p>
+      <div className="mb-4 flex flex-col gap-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/50">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+              Hierarchy-aware admissions policy
+            </p>
+            <p className="text-xs text-zinc-500">
+              Programme → Department → Academic Unit → University
+            </p>
+          </div>
 
-        <Button
-          onClick={openCreate}
-          className="ml-auto gap-1"
-        >
-          <Plus className="h-4 w-4" />
-          Add Rule
-        </Button>
+          <Button
+            onClick={openCreate}
+            className="gap-1"
+            disabled={!activeLevel}
+          >
+            <Plus className="h-4 w-4" />
+            Add Rule
+          </Button>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-300">
+              University
+            </label>
+            <select
+              value={selectedUniversityId}
+              onChange={(e) => {
+                const next = e.target.value;
+                setSelectedUniversityId(next);
+                setSelectedAcademicUnitId("");
+                setSelectedDepartmentId("");
+                setSelectedProgrammeId("");
+              }}
+              className="min-h-11 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+            >
+              <option value="">Select a university</option>
+              {universities.map((item: any) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-300">
+              Academic unit
+            </label>
+            <select
+              value={selectedAcademicUnitId}
+              onChange={(e) => {
+                const next = e.target.value;
+                setSelectedAcademicUnitId(next);
+                setSelectedDepartmentId("");
+                setSelectedProgrammeId("");
+              }}
+              disabled={!selectedUniversityId || academicUnitsLoading}
+              className="min-h-11 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+            >
+              <option value="">Select an academic unit</option>
+              {academicUnits.map((item: any) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-300">
+              Department
+            </label>
+            <select
+              value={selectedDepartmentId}
+              onChange={(e) => {
+                const next = e.target.value;
+                setSelectedDepartmentId(next);
+                setSelectedProgrammeId("");
+              }}
+              disabled={!selectedAcademicUnitId || departmentsLoading}
+              className="min-h-11 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+            >
+              <option value="">Select a department</option>
+              {departments.map((item: any) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-300">
+              Programme
+            </label>
+            <select
+              value={selectedProgrammeId}
+              onChange={(e) => {
+                setSelectedProgrammeId(e.target.value);
+              }}
+              disabled={!selectedDepartmentId && !selectedAcademicUnitId && !selectedUniversityId || programmesLoading}
+              className="min-h-11 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+            >
+              <option value="">Select a programme</option>
+              {programmes.map((item: any) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-zinc-200 dark:border-zinc-800">
-                  <th className="px-4 pb-3 pt-4 text-left font-medium text-zinc-500">
-                    Title
-                  </th>
-                  <th className="px-4 pb-3 pt-4 text-left font-medium text-zinc-500">
-                    Description
-                  </th>
-                  <th className="px-4 pb-3 pt-4 text-left font-medium text-zinc-500">
-                    Status
-                  </th>
-                  <th className="px-4 pb-3 pt-4 text-left font-medium text-zinc-500">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
+      {!selectedUniversityId ? (
+        <Card>
+          <CardContent className="flex min-h-32 items-center justify-center py-12 text-zinc-500">
+            Select a university to begin managing admissions rules.
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <div className="border-b border-zinc-200 px-4 py-4 dark:border-zinc-800">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-zinc-500">Current scope</p>
+                  <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+                    {activeLabel}
+                  </h3>
+                </div>
+                <Badge variant="outline">
+                  {activeLevel ? activeLevel.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase()) : "Rule layer"}
+                </Badge>
+              </div>
+            </div>
 
-              <tbody>
-                {isLoading ? (
-                  [1, 2, 3].map((i) => (
-                    <TableRowSkeleton
-                      key={i}
-                      cols={4}
-                    />
-                  ))
-                ) : items.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={4}
-                      className="py-12 text-center text-zinc-500"
+            <div className="p-4">
+              {selectedLevelLoading ? (
+                <div className="py-6 text-sm text-zinc-500">Loading rules...</div>
+              ) : activeRules.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-6 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900/50">
+                  No {activeLevel === "programme" ? "programme" : activeLevel === "department" ? "department" : activeLevel === "academicUnit" ? "academic unit" : "university"} rule has been added yet.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {activeRules.map((rule: any) => (
+                    <div
+                      key={rule.id}
+                      className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-950/40"
                     >
-                      No admission rules
-                    </td>
-                  </tr>
-                ) : (
-                  items.map((item: any) => (
-                    <tr
-                      key={item.id}
-                      className="border-b border-zinc-100 dark:border-zinc-800"
-                    >
-                      <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-50">
-                        {item.title}
-                      </td>
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs uppercase tracking-wide text-zinc-500">
+                              {rule.category}
+                            </span>
+                            {rule.subject?.name && (
+                              <Badge variant="secondary">{rule.subject.name}</Badge>
+                            )}
+                          </div>
 
-                      <td className="max-w-md truncate px-4 py-3 text-zinc-500">
-                        {item.description}
-                      </td>
+                          {activeLevel === "programme" ? (
+                            <p className="text-sm text-zinc-800 dark:text-zinc-200">{rule.text}</p>
+                          ) : (
+                            <>
+                              <p className="font-medium text-zinc-900 dark:text-zinc-50">{rule.title}</p>
+                              <p className="text-sm text-zinc-600 dark:text-zinc-300">{rule.description}</p>
+                              {(rule.minimumGrade || rule.minimumCount !== undefined && rule.minimumCount !== null) && (
+                                <p className="text-xs text-zinc-500">
+                                  {rule.minimumGrade ? `Minimum grade: ${rule.minimumGrade}` : ""}
+                                  {rule.minimumGrade && rule.minimumCount !== undefined && rule.minimumCount !== null ? " • " : ""}
+                                  {rule.minimumCount !== undefined && rule.minimumCount !== null ? `Minimum count: ${rule.minimumCount}` : ""}
+                                </p>
+                              )}
+                            </>
+                          )}
+                        </div>
 
-                      <td className="px-4 py-3">
-                        <Badge
-                          variant={
-                            item.isActive
-                              ? "success"
-                              : "secondary"
-                          }
-                        >
-                          {item.isActive
-                            ? "Active"
-                            : "Inactive"}
-                        </Badge>
-                      </td>
-
-                      <td className="px-4 py-3">
-                        <div className="flex gap-1">
+                        <div className="flex gap-2">
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() =>
-                              openEdit(item)
-                            }
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openEdit(rule)}
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="mr-1 h-4 w-4" />
+                            Edit
                           </Button>
-
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() =>
-                              handleDelete(item)
-                            }
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(rule)}
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="mr-1 h-4 w-4 text-red-500" />
+                            Delete
                           </Button>
                         </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-      {modal.mode && (
+      {modal.mode && activeLevel && (
         <Modal
           title={
             modal.mode === "create"
-              ? "Add Admission Rule"
-              : "Edit Admission Rule"
+              ? `Add ${activeLevel === "programme" ? "Programme" : activeLevel === "department" ? "Department" : activeLevel === "academicUnit" ? "Academic Unit" : "University"} Rule`
+              : `Edit ${activeLevel === "programme" ? "Programme" : activeLevel === "department" ? "Department" : activeLevel === "academicUnit" ? "Academic Unit" : "University"} Rule`
           }
-          onClose={() =>
-            setModal({ mode: null })
-          }
+          onClose={() => {
+            setModal({ mode: null, level: activeLevel || "university" });
+            resetForm();
+          }}
         >
           <div className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium">
-                Title *
+              <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                Category
               </label>
-
-              <input
-                type="text"
-                value={form.title}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    title: e.target.value,
-                  })
-                }
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-sm font-medium">
-                Description *
-              </label>
-
-              <textarea
-                value={form.description}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    description:
-                      e.target.value,
-                  })
-                }
-                rows={4}
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={form.isActive}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    isActive:
-                      e.target.checked,
-                  })
-                }
-                id="isActive"
-              />
-
-              <label
-                htmlFor="isActive"
-                className="text-sm"
+              <select
+                value={form.category}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
+                className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
               >
-                Active
-              </label>
+                <option value="O_LEVEL">O Level</option>
+                <option value="A_LEVEL">A Level</option>
+                <option value="QUALIFICATION">Qualification</option>
+                <option value="ENTRANCE_EXAM">Entrance Exam</option>
+                <option value="EQUIVALENCY">Equivalency</option>
+              </select>
             </div>
+
+            {activeLevel === "programme" ? (
+              <div>
+                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Rule text *
+                </label>
+                <textarea
+                  rows={4}
+                  value={form.text}
+                  onChange={(e) => setForm({ ...form, text: e.target.value })}
+                  className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+                />
+              </div>
+            ) : (
+              <>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    Rule title *
+                  </label>
+                  <input
+                    type="text"
+                    value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    Description
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+                  />
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                      Subject
+                    </label>
+                    <select
+                      value={form.subjectId}
+                      onChange={(e) => setForm({ ...form, subjectId: e.target.value })}
+                      className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+                    >
+                      <option value="">Any subject</option>
+                      {subjects.map((subject: any) => (
+                        <option key={subject.id} value={subject.id}>
+                          {subject.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                      Minimum grade
+                    </label>
+                    <input
+                      type="text"
+                      value={form.minimumGrade}
+                      onChange={(e) => setForm({ ...form, minimumGrade: e.target.value })}
+                      className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    Minimum count
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.minimumCount}
+                    onChange={(e) => setForm({ ...form, minimumCount: e.target.value })}
+                    className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+                  />
+                </div>
+              </>
+            )}
 
             <div className="flex justify-end gap-2 pt-2">
               <Button
                 variant="outline"
-                onClick={() =>
-                  setModal({ mode: null })
-                }
+                onClick={() => {
+                  setModal({ mode: null, level: activeLevel || "university" });
+                  resetForm();
+                }}
               >
                 Cancel
               </Button>
-
               <Button onClick={handleSubmit}>
                 <Save className="mr-1 h-4 w-4" />
-                {modal.mode === "create"
-                  ? "Create"
-                  : "Save"}
+                {modal.mode === "create" ? "Create" : "Save"}
               </Button>
             </div>
           </div>
@@ -4570,6 +6497,13 @@ function RequirementsTab({
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {selectedProgrammeId && (
+        <ProgrammeAdmissionRulesPanel
+          programmeId={selectedProgrammeId}
+          showToast={showToast}
+        />
       )}
 
       {!selectedProgrammeId && (

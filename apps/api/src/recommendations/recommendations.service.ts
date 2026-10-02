@@ -5,7 +5,11 @@ import { PrismaService } from '../prisma/prisma.service';
 export class RecommendationsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getSimilarProgrammes(programmeId: string, limit: number = 5) {
+  async getSimilarProgrammes(
+    programmeId: string,
+    limit: number = 5,
+    universityId?: string,
+  ) {
     const programme = await this.prisma.programme.findUnique({
       where: { id: programmeId },
       include: {
@@ -16,7 +20,14 @@ export class RecommendationsService {
           select: { careerId: true },
         },
         department: {
-          select: { academicUnitId: true },
+          select: {
+            academicUnitId: true,
+            academicUnit: {
+              select: {
+                universityId: true,
+              },
+            },
+          },
         },
       },
     });
@@ -25,11 +36,19 @@ export class RecommendationsService {
 
     const subjectIds = programme.requirements.map((r) => r.subjectId);
     const careerIds = programme.careers.map((c) => c.careerId);
+    const scopeUniversityId = universityId ?? programme.department.academicUnit.universityId;
 
-    // Find programmes with similar subjects or careers, excluding current programme
     const similar = await this.prisma.programme.findMany({
       where: {
+        isActive: true,
         id: { not: programmeId },
+        ...(scopeUniversityId && {
+          department: {
+            academicUnit: {
+              universityId: scopeUniversityId,
+            },
+          },
+        }),
         OR: [
           {
             requirements: {
@@ -76,9 +95,21 @@ export class RecommendationsService {
     return similar;
   }
 
-  async getCareerRecommendations(careerName: string, limit: number = 10) {
+  async getCareerRecommendations(
+    careerName: string,
+    limit: number = 10,
+    universityId?: string,
+  ) {
     return this.prisma.programme.findMany({
       where: {
+        isActive: true,
+        ...(universityId && {
+          department: {
+            academicUnit: {
+              universityId,
+            },
+          },
+        }),
         careers: {
           some: {
             career: {
@@ -106,9 +137,21 @@ export class RecommendationsService {
     });
   }
 
-  async getSubjectRecommendations(subjectIds: string[], limit: number = 10) {
+  async getSubjectRecommendations(
+    subjectIds: string[],
+    limit: number = 10,
+    universityId?: string,
+  ) {
     return this.prisma.programme.findMany({
       where: {
+        isActive: true,
+        ...(universityId && {
+          department: {
+            academicUnit: {
+              universityId,
+            },
+          },
+        }),
         requirements: {
           some: {
             subjectId: { in: subjectIds },
@@ -140,10 +183,19 @@ export class RecommendationsService {
   async getAlternativeProgrammes(
     missingSubjectIds: string[],
     limit: number = 5,
+    universityId?: string,
   ) {
     // Find programmes that DON'T require the missing subjects
     return this.prisma.programme.findMany({
       where: {
+        isActive: true,
+        ...(universityId && {
+          department: {
+            academicUnit: {
+              universityId,
+            },
+          },
+        }),
         requirements: {
           none: {
             subjectId: { in: missingSubjectIds },
